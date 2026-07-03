@@ -1,4 +1,4 @@
-import React, { useEffect, useLayoutEffect, useRef } from "react";
+import React from "react";
 
 interface Props {
   letter: string;
@@ -8,9 +8,9 @@ interface Props {
 const ShowLetterWithCursor = ({ letter, error }: Props) => {
   return (
     <span
-      className={`  ${error === 1 && "soft-error"} ${
+      className={`${error === 1 && "soft-error"} ${
         error === 2 && "dark-error"
-      } ${error === 0 ? "text-foreground" : "text-foreground-light"} `}
+      } ${error === 0 ? "text-foreground" : "text-foreground-light"}`}
     >
       {letter}
     </span>

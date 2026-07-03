@@ -7,7 +7,7 @@ import React, {
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Search from "@/images/search.svg";
-import ChaseCursor from "../modal/ChaseCursor";
+import ChaseCursor from "../ChaseCursor";
 
 interface ModalProps {
   isOpen: boolean;

@@ -1,5 +1,7 @@
-import React, { useEffect, useRef, useState } from "react";
-import ShowLetterWithCursor from "./showLetterWithCursor";
+"use client";
+
+import React, { useEffect, useState } from "react";
+import ShowLetterWithCursor from "./ShowLetterWithCursor";
 import { motion } from "framer-motion";
 import { useAppSelector } from "@/lib/hooks";
 
@@ -24,17 +26,12 @@ const ShowWordWithCursor = ({
   isCurrent,
   showCursor,
 }: Props) => {
-  const [leftPos, setLeftPos] = useState(0); // this is the normal curosor position
-  const [ghostsLeftPos, setGhostsLeftPos] = useState<number[]>([]); // since we can have many ghost cursors
+  const [ghostsLeftPos, setGhostsLeftPos] = useState<number[]>([]);
   const { width } = useAppSelector((state) => state.typingParagraphProp);
   const { cursors } = useAppSelector((state) => state.ghostCursor);
 
   useEffect(() => {
-    if (isCurrent) setLeftPos(width * letterIndex + letterIndex * (width / 5));
-  }, [width, isCurrent, letterIndex]);
-
-  useEffect(() => {
-    const ghostPos = cursors.map((cursor, i) => {
+    const ghostPos = cursors.map((cursor) => {
       if (cursor.wordIndex === index) {
         return cursor.letterIndex * width + cursor.letterIndex * (width / 5);
       }
@@ -45,11 +42,11 @@ const ShowWordWithCursor = ({
 
   return (
     <div
-      className="flex relative "
+      className="flex relative"
       id="wordContainer"
       ref={isCurrent ? currentWordRef : null}
     >
-      <div className=" flex z-10" style={{ gap: width / 5 }}>
+      <div className="flex z-10" style={{ gap: width / 5 }}>
         {wordProp.word.split("").map((letter, index) => (
           <ShowLetterWithCursor
             letter={letter}
@@ -58,22 +55,6 @@ const ShowWordWithCursor = ({
           />
         ))}
       </div>
-      {/* {isCurrent && (
-        <motion.div
-          layoutId="cursor"
-          ref={cursorRef}
-          initial={{ x: leftPos }}
-          animate={{ x: leftPos }}
-          className={` absolute h-full bg-foreground rounded-lg animate-pulse z-10  ${
-            !showCursor && "!opacity-0"
-          } `}
-          transition={{
-            type: "tween",
-            duration: 0.2,
-          }}
-          style={{ width: width / 5, left: -width / 5 }}
-        />
-      )} */}
 
       {cursors.map((cursor, i) =>
         cursor.wordIndex === index ? (
@@ -85,17 +66,14 @@ const ShowWordWithCursor = ({
             className={`absolute h-full bg-ghost-cursor rounded-lg animate-pulse z-[5] ${
               !showCursor && "!opacity-0"
             }`}
-            transition={{
-              type: "tween",
-              duration: 0.15,
-            }}
+            transition={{ type: "tween", duration: 0.15 }}
             style={{ width: width / 5, left: -width / 5 }}
           />
         ) : null
       )}
 
       {!isCurrent && index < wordIndex && wordProp.error?.error && (
-        <div className=" word-error "></div>
+        <div className="word-error" />
       )}
     </div>
   );

@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState } from "react";
 import { useAppDispatch, useAppSelector } from "@/lib/hooks";
 import { setCursors } from "@/lib/features/ghostCursor/ghostCursor";
@@ -87,11 +89,7 @@ export const ChaseCursor: React.FC = () => {
         setCursors({
           cursors: [
             ...cursors,
-            {
-              ...newCursor,
-              letterIndex: 0,
-              wordIndex: 0,
-            },
+            { ...newCursor, letterIndex: 0, wordIndex: 0 },
           ],
         })
       );

@@ -1,7 +1,9 @@
+"use client";
+
 import React from "react";
 import { motion } from "framer-motion";
 import { useAppSelector } from "@/lib/hooks";
-import ShowWordWithCursor from "./showWordWithCursor";
+import ShowWordWithCursor from "./ShowWordWithCursor";
 import { gap } from "@/lib/constants";
 
 interface Props {
@@ -19,7 +21,6 @@ const WordDisplay = ({
 }: Props) => {
   const {
     level,
-    levelFromTop,
     currentWordPostiionFromParentContainer,
     height: letterHeight,
     width: letterWidth,
@@ -30,13 +31,12 @@ const WordDisplay = ({
 
   return (
     <motion.div
-      className=" flex flex-wrap gap-y-pa text-pa relative w-full mx-8 "
+      className="flex flex-wrap gap-y-pa text-pa relative w-full mx-8"
       initial={{ y: 0 }}
       animate={{
-        y:
-          -1 * (level * letterHeight + Math.max(0, level) * letterHeight * gap), // move the total line height as well as the gap
+        y: -1 * (level * letterHeight + Math.max(0, level) * letterHeight * gap),
       }}
-      transition={{ type: "tween", duration: "0.05" }}
+      transition={{ type: "tween", duration: 0.05 }}
       style={{
         columnGap: 1.5 * letterWidth,
       }}
@@ -44,9 +44,9 @@ const WordDisplay = ({
     >
       <div
         ref={cursorRef}
-        className={` absolute h-full bg-foreground rounded-lg animate-pulse z-10 transition-all duration-100 ${
+        className={`absolute h-full bg-foreground rounded-lg animate-pulse z-10 transition-all duration-100 ${
           !showCursor && "!opacity-0"
-        } `}
+        }`}
         style={{
           width: letterWidth / 5,
           left:

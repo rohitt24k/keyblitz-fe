@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useCallback, useEffect } from "react";
 
 interface KeyboardInputHandlerProps {
@@ -15,30 +17,15 @@ export const KeyboardInputHandler: React.FC<KeyboardInputHandlerProps> = ({
   isModalOpen,
   setIsModalOpen,
 }) => {
-  const handleEscape = useCallback(() => {
-    console.log("escape is clicked");
-
-    setIsModalOpen(true);
-  }, [setIsModalOpen]);
-
-  const handleTab = useCallback(() => {
-    // Tab handling logic can be implemented here
-    console.log("Tab is being clicked ");
-  }, []);
-
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
-      console.log("key -> ", e.key);
-
       switch (e.key) {
         case "Escape":
-          handleEscape();
+          setIsModalOpen(true);
           break;
         case "Tab":
-          handleTab();
           break;
         case "Enter":
-          // Enter handling logic can be implemented here
           break;
         default:
           e.preventDefault();
@@ -46,7 +33,7 @@ export const KeyboardInputHandler: React.FC<KeyboardInputHandlerProps> = ({
           break;
       }
     },
-    [handleFocus, handleEscape, handleTab]
+    [handleFocus, setIsModalOpen]
   );
 
   useEffect(() => {

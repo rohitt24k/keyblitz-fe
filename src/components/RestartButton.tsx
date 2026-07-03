@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useResetStates } from "@/hooks/useResetStates";
-import { Button } from "./ui/Button";
+import { Button } from "./ui/button";
 
 const RestartButton = () => {
   const { resetStates } = useResetStates();

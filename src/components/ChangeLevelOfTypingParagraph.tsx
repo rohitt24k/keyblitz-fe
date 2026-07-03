@@ -1,3 +1,5 @@
+"use client";
+
 import { gap } from "@/lib/constants";
 import {
   currentWordTopAndLeftPos,
@@ -15,6 +17,17 @@ interface Props {
       top: number;
     }>
   >;
+}
+
+function debounce<T extends (...args: unknown[]) => void>(
+  func: T,
+  delay: number
+): T {
+  let timeoutId: ReturnType<typeof setTimeout>;
+  return function (this: unknown, ...args: Parameters<T>) {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => func.apply(this, args), delay);
+  } as T;
 }
 
 const ChangeLevelOfTypingParagraph = ({
@@ -40,7 +53,6 @@ const ChangeLevelOfTypingParagraph = ({
 
     if (elementRect && parentRect) {
       const topRelativeToParent = elementRect.top - parentRect.top;
-
       const leftRelativeToParent = elementRect.left - parentRect.left;
 
       dispatch(
@@ -50,39 +62,23 @@ const ChangeLevelOfTypingParagraph = ({
         })
       );
 
-      /* Math for this totalLevel and h // h is the height of cursor from the overall paragraph like seen top 
-      let totalLevel = n and h is letter height and we are taking also g is the gap to height ratio in terms of rem
-
-      n * h + (n - 1) * g * h = totalHeight (ie. totalHeight = parentRect.height)
-
-      now solve for n and we get 
-      n = (totalHeight + g * h) / (h + g * h)
-
+      /*
+        Math: n * h + (n - 1) * g * h = totalHeight
+        Solving for n: n = (totalHeight + g * h) / (h + g * h)
       */
 
-      let totalHeight = parentRect.height;
-
+      const totalHeight = parentRect.height;
       const totalLevel = Math.round(
         (totalHeight + gap * letterHeight) / (letterHeight + gap * letterHeight)
       );
 
-      totalHeight = topRelativeToParent;
-
       const h = Math.round(
-        (totalHeight + gap * letterHeight) / (letterHeight + gap * letterHeight)
+        (topRelativeToParent + gap * letterHeight) /
+          (letterHeight + gap * letterHeight)
       );
 
-      // console.log(
-      //   h,
-      //   totalLevel - 1,
-      //   level,
-      //   parentRect.height,
-      //   letterHeight,
-      //   gap * letterHeight
-      // );
-
       if (h === 0) {
-        dispatch(increaseLevel({ level: 0, levelFromTop: h })); // for level 0
+        dispatch(increaseLevel({ level: 0, levelFromTop: h }));
         setCursorPosition({
           top: 0,
           left:
@@ -98,7 +94,7 @@ const ChangeLevelOfTypingParagraph = ({
             letterWidth * letterIndex +
             letterIndex * (letterWidth / 4),
         });
-        dispatch(increaseLevel({ level: h - 2, levelFromTop: h })); // for level 2
+        dispatch(increaseLevel({ level: h - 2, levelFromTop: h }));
       } else {
         setCursorPosition({
           top: 1 * letterHeight + 1 * letterHeight * gap,
@@ -107,7 +103,7 @@ const ChangeLevelOfTypingParagraph = ({
             letterWidth * letterIndex +
             letterIndex * (letterWidth / 4),
         });
-        dispatch(increaseLevel({ level: h - 1, levelFromTop: h })); // for level 1
+        dispatch(increaseLevel({ level: h - 1, levelFromTop: h }));
       }
     }
   }, [
@@ -123,30 +119,10 @@ const ChangeLevelOfTypingParagraph = ({
     changeLevelOfTypingParagraph();
   }, [letterIndex, wordIndex, changeLevelOfTypingParagraph]);
 
-  function debounce<T extends (...args: any[]) => void>(
-    func: T,
-    delay: number
-  ): T {
-    let timeoutId: ReturnType<typeof setTimeout>;
-
-    return function (this: unknown, ...args: Parameters<T>) {
-      clearTimeout(timeoutId);
-      timeoutId = setTimeout(() => func.apply(this, args), delay);
-    } as T;
-  }
-
   useEffect(() => {
     const debouncedChangeLevel = debounce(changeLevelOfTypingParagraph, 300);
-
-    function handleResize() {
-      debouncedChangeLevel();
-    }
-
-    window.addEventListener("resize", handleResize);
-
-    return () => {
-      window.removeEventListener("resize", handleResize);
-    };
+    window.addEventListener("resize", debouncedChangeLevel);
+    return () => window.removeEventListener("resize", debouncedChangeLevel);
   }, [changeLevelOfTypingParagraph]);
 
   return <>{children}</>;

@@ -1,14 +1,38 @@
-import ParentDiv from "@/components/test";
-import React from "react";
+"use client";
 
-interface Props {}
+import FindHeightWidth from "@/components/FindHeightWidth";
+import FinishTest from "@/components/FinishTest";
+import TypingParagraph from "@/components/TypingParagraph";
+import { useAppSelector } from "@/lib/hooks";
+import React, { useEffect, useState } from "react";
 
-const Page = (props: Props) => {
+export default function Page() {
+  const { endTest } = useAppSelector((state) => state.typingTests);
+  const [showFinishTest, setShowFinishTest] = useState(false);
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout | null = null;
+    if (endTest) {
+      timer = setTimeout(() => {
+        setShowFinishTest(true);
+      }, 1000);
+    } else {
+      setShowFinishTest(false);
+    }
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [endTest]);
+
   return (
-    <div>
-      <ParentDiv />
-    </div>
+    <FindHeightWidth>
+      {!endTest ? (
+        <TypingParagraph />
+      ) : showFinishTest ? (
+        <FinishTest />
+      ) : (
+        <div>Loading...</div>
+      )}
+    </FindHeightWidth>
   );
-};
-
-export default Page;
+}

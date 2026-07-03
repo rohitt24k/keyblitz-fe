@@ -3,7 +3,6 @@ import { resetCursor } from "@/lib/features/ghostCursor/ghostCursor";
 import { resetTrigger } from "@/lib/features/typingTests/typingTestsSlice";
 import { resetWords } from "@/lib/features/typingWord/typingWordSlice";
 import { useAppDispatch } from "@/lib/hooks";
-import { useEffect } from "react";
 
 export const useResetStates = () => {
   const dispatch = useAppDispatch();
@@ -16,9 +15,5 @@ export const useResetStates = () => {
     dispatch(resetWords());
   };
 
-  useEffect(() => {}, []);
-
-  return {
-    resetStates,
-  };
+  return { resetStates };
 };

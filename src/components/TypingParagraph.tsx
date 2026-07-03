@@ -1,24 +1,17 @@
-import { useAppSelector } from "@/lib/hooks";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+"use client";
 
+import { useAppSelector } from "@/lib/hooks";
+import React, { useEffect, useRef, useState } from "react";
 import { gap } from "@/lib/constants";
-import ChangeLevelOfTypingParagraph from "./changeLevelOfTypingParagraph";
-import TypingParagraphInputBox from "./typingParagraphInputBox";
-import WordDisplay from "./wordDisplay";
+import ChangeLevelOfTypingParagraph from "./ChangeLevelOfTypingParagraph";
+import TypingParagraphInputBox from "./TypingParagraphInputBox";
+import WordDisplay from "./WordDisplay";
 import { useInputFocus } from "@/hooks/useInputFocus";
 import CursorSVG from "@/images/cursor.svg";
 import GhostCursor from "./GhostCursor";
 import KeyboardInputHandler from "./KeyboardInputHandler";
-import Modal from "./ui/Modal";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "./ui/dialog";
-import Search from "@/images/search.svg";
+import Modal from "./ui/modal";
+import { Muted } from "./ui/typography";
 
 const TypingParagraph = () => {
   const { inputRef, focusInput, handleFocus, handleBlur, inputIsFocused } =
@@ -47,9 +40,7 @@ const TypingParagraph = () => {
     }
 
     return () => {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
+      if (timeoutId) clearTimeout(timeoutId);
     };
   }, [inputIsFocused]);
 
@@ -57,7 +48,7 @@ const TypingParagraph = () => {
     if (!isModalOpen) {
       focusInput();
     }
-  }, [isModalOpen]);
+  }, [isModalOpen, focusInput]);
 
   return (
     <ChangeLevelOfTypingParagraph
@@ -71,35 +62,16 @@ const TypingParagraph = () => {
         setIsModalOpen={setIsModalOpen}
       >
         <>
-          <p className=" text-foreground-light text-center mb-8">
-            press ESC for options
-          </p>
+          <Muted className="text-center mb-8">press ESC for options</Muted>
 
           <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
-          {/* <div className=" font-sans">
-            <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle className=" flex gap-4 items-center">
-                    <Search className="w-5 h-5 text-border " />
-                    <input
-                      type="text"
-                      className=" w-full bg-transparent outline-none font-medium "
-                      placeholder="Search..."
-                    />
-                  </DialogTitle>
-                </DialogHeader>
-                noice
-              </DialogContent>
-            </Dialog>
-          </div> */}
 
           <GhostCursor>
             <div
-              className=" relative overflow-hidden select-none "
+              className="relative overflow-hidden select-none"
               style={{
                 height: `${letterHeight * 3 + gap * letterHeight * 2}px`,
-              }} // taking the 3 line height and 2 gap height
+              }}
               onMouseDown={(e) => {
                 e.preventDefault();
                 handleFocus();
@@ -107,15 +79,15 @@ const TypingParagraph = () => {
             >
               {showOverlay && (
                 <div
-                  className=" absolute h-full w-full backdrop-blur-sm z-20 grid place-items-center cursor-pointer rounded-lg "
+                  className="absolute h-full w-full backdrop-blur-sm z-20 grid place-items-center cursor-pointer rounded-lg"
                   onClick={handleFocus}
                 >
-                  <p className=" flex items-center gap-2">
-                    Click to focus <CursorSVG height="16" /> or press or key
-                  </p>
+                  <Muted className="flex items-center gap-2">
+                    Click to focus <CursorSVG height="16" /> or press any key
+                  </Muted>
                 </div>
               )}
-              <div className=" flex relative w-full ">
+              <div className="flex relative w-full">
                 <WordDisplay
                   typingParagraphRef={typingParagraphRef}
                   cursorRef={cursorRef}

@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import Header from "@/components/header";
-import ThemeManager from "@/components/themeManager";
-import StoreProvider from "../../lib/storeProvider";
+import Header from "@/components/Header";
+import ThemeManager from "@/components/ThemeManager";
+import StoreProvider from "@/lib/storeProvider";
 import RestartButton from "@/components/RestartButton";
 import { Space_Mono } from "next/font/google";
 import MutableDataProvider from "@/context/mutableDataProvider";
@@ -21,10 +21,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-  typing,
 }: Readonly<{
   children: React.ReactNode;
-  typing?: React.ReactNode;
 }>) {
   return (
     <html lang="en">
@@ -32,16 +30,10 @@ export default function RootLayout({
         <StoreProvider>
           <MutableDataProvider>
             <ThemeManager>
-              <div
-                className={
-                  " px-4 xs:w-[450px] sm:w-[600px] md:w-[740px] lg:w-[980px] xl:w-[1200px] mx-auto h-svh "
-                }
-              >
+              <div className="px-4 xs:w-[450px] sm:w-[600px] md:w-[740px] lg:w-[980px] xl:w-[1200px] mx-auto h-svh">
                 <Header />
-                <div className=" mt-8">{typing}</div>
-
+                <div className="mt-8">{children}</div>
                 <RestartButton />
-                {/* {children} */}
               </div>
             </ThemeManager>
           </MutableDataProvider>
