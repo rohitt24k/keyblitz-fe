@@ -1,8 +1,8 @@
 "use client";
 
-import { useAppSelector } from "@/lib/hooks";
 import React, { useEffect, useRef, useState } from "react";
 import { gap } from "@/lib/constants";
+import { useParagraphStore } from "@/lib/store-provider";
 import ChangeLevelOfTypingParagraph from "./ChangeLevelOfTypingParagraph";
 import TypingParagraphInputBox from "./TypingParagraphInputBox";
 import WordDisplay from "./WordDisplay";
@@ -17,9 +17,7 @@ const TypingParagraph = () => {
   const { inputRef, focusInput, handleFocus, handleBlur, inputIsFocused } =
     useInputFocus();
   const [cursorPosition, setCursorPosition] = useState({ left: 0, top: 0 });
-  const { height: letterHeight } = useAppSelector(
-    (state) => state.typingParagraphProp
-  );
+  const letterHeight = useParagraphStore((s) => s.height);
 
   const cursorRef = useRef<HTMLDivElement>(null);
   const typingParagraphRef = useRef<HTMLDivElement>(null);
@@ -30,24 +28,18 @@ const TypingParagraph = () => {
 
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
-
     if (!inputIsFocused) {
-      timeoutId = setTimeout(() => {
-        setShowOverlay(true);
-      }, 1000);
+      timeoutId = setTimeout(() => setShowOverlay(true), 1000);
     } else {
       setShowOverlay(false);
     }
-
     return () => {
       if (timeoutId) clearTimeout(timeoutId);
     };
   }, [inputIsFocused]);
 
   useEffect(() => {
-    if (!isModalOpen) {
-      focusInput();
-    }
+    if (!isModalOpen) focusInput();
   }, [isModalOpen, focusInput]);
 
   return (

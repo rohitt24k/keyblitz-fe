@@ -1,21 +1,14 @@
 "use client";
 
 import { gap } from "@/lib/constants";
-import {
-  currentWordTopAndLeftPos,
-  increaseLevel,
-} from "@/lib/features/typingParagraphProp/typingParagraphProp";
-import { useAppDispatch, useAppSelector } from "@/lib/hooks";
+import { useTypingStore, useParagraphStore } from "@/lib/store-provider";
 import React, { useCallback, useEffect } from "react";
 
 interface Props {
   children: React.ReactNode;
   currentWordRef: React.RefObject<HTMLDivElement>;
   setCursorPosition: React.Dispatch<
-    React.SetStateAction<{
-      left: number;
-      top: number;
-    }>
+    React.SetStateAction<{ left: number; top: number }>
   >;
 }
 
@@ -35,16 +28,13 @@ const ChangeLevelOfTypingParagraph = ({
   currentWordRef,
   setCursorPosition,
 }: Props) => {
-  const {
-    height: letterHeight,
-    width: letterWidth,
-    level,
-  } = useAppSelector((state) => state.typingParagraphProp);
-  const { letterIndex, wordIndex } = useAppSelector(
-    (state) => state.typingWord
-  );
+  const letterHeight = useParagraphStore((s) => s.height);
+  const letterWidth = useParagraphStore((s) => s.width);
+  const setWordPosition = useParagraphStore((s) => s.setWordPosition);
+  const setLevel = useParagraphStore((s) => s.setLevel);
 
-  const dispatch = useAppDispatch();
+  const letterIndex = useTypingStore((s) => s.letterIndex);
+  const wordIndex = useTypingStore((s) => s.wordIndex);
 
   const changeLevelOfTypingParagraph = useCallback(() => {
     const elementRect = currentWordRef.current?.getBoundingClientRect();
@@ -55,30 +45,24 @@ const ChangeLevelOfTypingParagraph = ({
       const topRelativeToParent = elementRect.top - parentRect.top;
       const leftRelativeToParent = elementRect.left - parentRect.left;
 
-      dispatch(
-        currentWordTopAndLeftPos({
-          topPos: topRelativeToParent,
-          leftPos: leftRelativeToParent,
-        })
-      );
+      setWordPosition(topRelativeToParent, leftRelativeToParent);
 
       /*
         Math: n * h + (n - 1) * g * h = totalHeight
-        Solving for n: n = (totalHeight + g * h) / (h + g * h)
+        Solving: n = (totalHeight + g * h) / (h + g * h)
       */
 
       const totalHeight = parentRect.height;
       const totalLevel = Math.round(
         (totalHeight + gap * letterHeight) / (letterHeight + gap * letterHeight)
       );
-
       const h = Math.round(
         (topRelativeToParent + gap * letterHeight) /
           (letterHeight + gap * letterHeight)
       );
 
       if (h === 0) {
-        dispatch(increaseLevel({ level: 0, levelFromTop: h }));
+        setLevel(0, h);
         setCursorPosition({
           top: 0,
           left:
@@ -94,7 +78,7 @@ const ChangeLevelOfTypingParagraph = ({
             letterWidth * letterIndex +
             letterIndex * (letterWidth / 4),
         });
-        dispatch(increaseLevel({ level: h - 2, levelFromTop: h }));
+        setLevel(h - 2, h);
       } else {
         setCursorPosition({
           top: 1 * letterHeight + 1 * letterHeight * gap,
@@ -103,16 +87,17 @@ const ChangeLevelOfTypingParagraph = ({
             letterWidth * letterIndex +
             letterIndex * (letterWidth / 4),
         });
-        dispatch(increaseLevel({ level: h - 1, levelFromTop: h }));
+        setLevel(h - 1, h);
       }
     }
   }, [
     currentWordRef,
-    dispatch,
     letterHeight,
     letterIndex,
     letterWidth,
     setCursorPosition,
+    setLevel,
+    setWordPosition,
   ]);
 
   useEffect(() => {

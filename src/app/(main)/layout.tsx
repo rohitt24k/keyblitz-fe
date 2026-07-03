@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import Header from "@/components/Header";
 import ThemeManager from "@/components/ThemeManager";
-import StoreProvider from "@/lib/storeProvider";
+import StoreProvider from "@/lib/store-provider";
 import RestartButton from "@/components/RestartButton";
 import { Space_Mono } from "next/font/google";
 import MutableDataProvider from "@/context/mutableDataProvider";

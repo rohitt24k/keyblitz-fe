@@ -3,30 +3,28 @@
 import FindHeightWidth from "@/components/FindHeightWidth";
 import FinishTest from "@/components/FinishTest";
 import TypingParagraph from "@/components/TypingParagraph";
-import { useAppSelector } from "@/lib/hooks";
+import { useTypingStore } from "@/lib/store-provider";
 import React, { useEffect, useState } from "react";
 
 export default function Page() {
-  const { endTest } = useAppSelector((state) => state.typingTests);
+  const testEnded = useTypingStore((s) => s.testEnded);
   const [showFinishTest, setShowFinishTest] = useState(false);
 
   useEffect(() => {
     let timer: NodeJS.Timeout | null = null;
-    if (endTest) {
-      timer = setTimeout(() => {
-        setShowFinishTest(true);
-      }, 1000);
+    if (testEnded) {
+      timer = setTimeout(() => setShowFinishTest(true), 1000);
     } else {
       setShowFinishTest(false);
     }
     return () => {
       if (timer) clearTimeout(timer);
     };
-  }, [endTest]);
+  }, [testEnded]);
 
   return (
     <FindHeightWidth>
-      {!endTest ? (
+      {!testEnded ? (
         <TypingParagraph />
       ) : showFinishTest ? (
         <FinishTest />

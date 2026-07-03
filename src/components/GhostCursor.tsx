@@ -1,7 +1,6 @@
 "use client";
 
-import { changeCursorProp } from "@/lib/features/ghostCursor/ghostCursor";
-import { useAppDispatch, useAppSelector } from "@/lib/hooks";
+import { useTypingStore } from "@/lib/store-provider";
 import React, { useCallback, useEffect, useMemo, useRef } from "react";
 
 interface IGhostCursorProps {
@@ -9,16 +8,14 @@ interface IGhostCursorProps {
 }
 
 const GhostCursor = ({ children }: IGhostCursorProps) => {
-  const { startTest, endTest } = useAppSelector((state) => state.typingTests);
-  const { cursors: globalCursor } = useAppSelector(
-    (state) => state.ghostCursor
-  );
-  const { correctWordArr } = useAppSelector((state) => state.typingWord);
-
-  const dispatch = useAppDispatch();
+  const testStarted = useTypingStore((s) => s.testStarted);
+  const testEnded = useTypingStore((s) => s.testEnded);
+  const cursors = useTypingStore((s) => s.cursors);
+  const correctWordArr = useTypingStore((s) => s.correctWordArr);
+  const moveCursor = useTypingStore((s) => s.moveCursor);
 
   const timersRef = useRef<(NodeJS.Timeout | null)[]>([]);
-  const cursorsRef = useRef(globalCursor);
+  const cursorsRef = useRef(cursors);
 
   /*
     time in min = total chars / (5 * wpm)
@@ -27,8 +24,8 @@ const GhostCursor = ({ children }: IGhostCursorProps) => {
   */
 
   useEffect(() => {
-    cursorsRef.current = globalCursor;
-  }, [globalCursor]);
+    cursorsRef.current = cursors;
+  }, [cursors]);
 
   const totalCharCount = useMemo(
     () => correctWordArr.reduce((acc, word) => acc + word.length, 0),
@@ -42,42 +39,29 @@ const GhostCursor = ({ children }: IGhostCursorProps) => {
       const eachCharTime = (time / totalCharCount) * 60 * 1000;
 
       return setInterval(() => {
-        const currentCursor = cursorsRef.current[cursorIndex];
-        if (currentCursor.wordIndex >= correctWordArr.length) {
+        const current = cursorsRef.current[cursorIndex];
+        if (current.wordIndex >= correctWordArr.length) {
           clearInterval(timersRef.current[cursorIndex] as NodeJS.Timeout);
           timersRef.current[cursorIndex] = null;
           return;
         }
 
         if (
-          correctWordArr[currentCursor.wordIndex] &&
-          currentCursor.letterIndex + 1 <
-            correctWordArr[currentCursor.wordIndex].length
+          correctWordArr[current.wordIndex] &&
+          current.letterIndex + 1 <
+            correctWordArr[current.wordIndex].length
         ) {
-          dispatch(
-            changeCursorProp({
-              index: cursorIndex,
-              prop: {
-                letterIndex: currentCursor.letterIndex + 1,
-                wordIndex: currentCursor.wordIndex,
-              },
-            })
-          );
+          moveCursor(cursorIndex, current.wordIndex, current.letterIndex + 1);
         } else {
-          dispatch(
-            changeCursorProp({
-              index: cursorIndex,
-              prop: { letterIndex: 0, wordIndex: currentCursor.wordIndex + 1 },
-            })
-          );
+          moveCursor(cursorIndex, current.wordIndex + 1, 0);
         }
       }, eachCharTime);
     },
-    [correctWordArr, dispatch, totalCharCount]
+    [correctWordArr, moveCursor, totalCharCount]
   );
 
   useEffect(() => {
-    const isTestRunning = startTest && !endTest;
+    const isTestRunning = testStarted && !testEnded;
 
     if (isTestRunning) {
       cursorsRef.current.forEach((_, index) => {
@@ -95,7 +79,7 @@ const GhostCursor = ({ children }: IGhostCursorProps) => {
         if (timer) clearInterval(timer);
       });
     };
-  }, [startTest, endTest, setupCursorInterval]);
+  }, [testStarted, testEnded, setupCursorInterval]);
 
   return <>{children}</>;
 };

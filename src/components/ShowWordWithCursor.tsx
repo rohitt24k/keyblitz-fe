@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import ShowLetterWithCursor from "./ShowLetterWithCursor";
 import { motion } from "framer-motion";
-import { useAppSelector } from "@/lib/hooks";
+import { useTypingStore, useParagraphStore } from "@/lib/store-provider";
 
 interface Props {
   wordProp: wordProp;
@@ -27,16 +27,15 @@ const ShowWordWithCursor = ({
   showCursor,
 }: Props) => {
   const [ghostsLeftPos, setGhostsLeftPos] = useState<number[]>([]);
-  const { width } = useAppSelector((state) => state.typingParagraphProp);
-  const { cursors } = useAppSelector((state) => state.ghostCursor);
+  const width = useParagraphStore((s) => s.width);
+  const cursors = useTypingStore((s) => s.cursors);
 
   useEffect(() => {
-    const ghostPos = cursors.map((cursor) => {
-      if (cursor.wordIndex === index) {
-        return cursor.letterIndex * width + cursor.letterIndex * (width / 5);
-      }
-      return 0;
-    });
+    const ghostPos = cursors.map((cursor) =>
+      cursor.wordIndex === index
+        ? cursor.letterIndex * width + cursor.letterIndex * (width / 5)
+        : 0
+    );
     setGhostsLeftPos(ghostPos);
   }, [width, cursors, index]);
 
@@ -47,11 +46,11 @@ const ShowWordWithCursor = ({
       ref={isCurrent ? currentWordRef : null}
     >
       <div className="flex z-10" style={{ gap: width / 5 }}>
-        {wordProp.word.split("").map((letter, index) => (
+        {wordProp.word.split("").map((letter, i) => (
           <ShowLetterWithCursor
             letter={letter}
-            key={index}
-            error={wordProp.error?.letterError[index]}
+            key={i}
+            error={wordProp.error?.letterError[i]}
           />
         ))}
       </div>

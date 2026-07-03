@@ -2,7 +2,7 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { useAppSelector } from "@/lib/hooks";
+import { useTypingStore, useParagraphStore } from "@/lib/store-provider";
 import ShowWordWithCursor from "./ShowWordWithCursor";
 import { gap } from "@/lib/constants";
 
@@ -19,15 +19,14 @@ const WordDisplay = ({
   currentWordRef,
   showCursor,
 }: Props) => {
-  const {
-    level,
-    currentWordPostiionFromParentContainer,
-    height: letterHeight,
-    width: letterWidth,
-  } = useAppSelector((state) => state.typingParagraphProp);
-  const { wordArr, wordIndex, letterIndex } = useAppSelector(
-    (state) => state.typingWord
-  );
+  const level = useParagraphStore((s) => s.level);
+  const currentWordPosition = useParagraphStore((s) => s.currentWordPosition);
+  const letterHeight = useParagraphStore((s) => s.height);
+  const letterWidth = useParagraphStore((s) => s.width);
+
+  const wordArr = useTypingStore((s) => s.wordArr);
+  const wordIndex = useTypingStore((s) => s.wordIndex);
+  const letterIndex = useTypingStore((s) => s.letterIndex);
 
   return (
     <motion.div
@@ -37,9 +36,7 @@ const WordDisplay = ({
         y: -1 * (level * letterHeight + Math.max(0, level) * letterHeight * gap),
       }}
       transition={{ type: "tween", duration: 0.05 }}
-      style={{
-        columnGap: 1.5 * letterWidth,
-      }}
+      style={{ columnGap: 1.5 * letterWidth }}
       ref={typingParagraphRef}
     >
       <div
@@ -50,11 +47,11 @@ const WordDisplay = ({
         style={{
           width: letterWidth / 5,
           left:
-            currentWordPostiionFromParentContainer.left +
+            currentWordPosition.left +
             letterIndex * letterWidth +
             (letterIndex - 1) * (letterWidth / 5) +
             "px",
-          top: currentWordPostiionFromParentContainer.top + "px",
+          top: currentWordPosition.top + "px",
           height: letterHeight * 1.1,
         }}
       />

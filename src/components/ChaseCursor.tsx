@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { useAppDispatch, useAppSelector } from "@/lib/hooks";
-import { setCursors } from "@/lib/features/ghostCursor/ghostCursor";
+import { useTypingStore } from "@/lib/store-provider";
 import Close from "@/images/close.svg";
 
 interface Cursor {
@@ -79,30 +78,22 @@ const NewCursorInput: React.FC<{
 );
 
 export const ChaseCursor: React.FC = () => {
-  const { cursors } = useAppSelector((state) => state.ghostCursor);
+  const cursors = useTypingStore((s) => s.cursors);
+  const setCursors = useTypingStore((s) => s.setCursors);
   const [newCursor, setNewCursor] = useState<NewCursor>({ name: "", wpm: 0 });
-  const dispatch = useAppDispatch();
 
   const handleAddCursor = () => {
     if (newCursor.name && newCursor.wpm > 0) {
-      dispatch(
-        setCursors({
-          cursors: [
-            ...cursors,
-            { ...newCursor, letterIndex: 0, wordIndex: 0 },
-          ],
-        })
-      );
+      setCursors([
+        ...cursors,
+        { ...newCursor, letterIndex: 0, wordIndex: 0 },
+      ]);
       setNewCursor({ name: "", wpm: 0 });
     }
   };
 
   const handleDeleteCursor = (index: number) => {
-    dispatch(
-      setCursors({
-        cursors: cursors.filter((_, i) => i !== index),
-      })
-    );
+    setCursors(cursors.filter((_, i) => i !== index));
   };
 
   return (

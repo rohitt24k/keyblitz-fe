@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  setEndTest,
-  setresetTest,
-  setStartTest,
-} from "@/lib/features/typingTests/typingTestsSlice";
-import { useAppDispatch } from "@/lib/hooks";
+import { useTypingStore } from "@/lib/store-provider";
 import { calculateTimeDiff } from "@/utils/calculateTimeDiff";
 import { createContext, MutableRefObject, useContext, useRef } from "react";
 
@@ -31,8 +26,7 @@ interface IMutableDataProvider {
 
 const MutableDataContext = createContext<IMutableDataContext | null>(null);
 
-function MutableDataProvider(props: IMutableDataProvider) {
-  const { children } = props;
+function MutableDataProvider({ children }: IMutableDataProvider) {
   const testProp = useRef<ITestProp>({
     totalTimeSpent: 0,
     startTime: 0,
@@ -46,11 +40,13 @@ function MutableDataProvider(props: IMutableDataProvider) {
     accuracy: -1,
   });
 
-  const dispatch = useAppDispatch();
+  const startTest = useTypingStore((s) => s.startTest);
+  const endTest = useTypingStore((s) => s.endTest);
+  const resetTestFlags = useTypingStore((s) => s.resetTestFlags);
 
   const startTestMethod = () => {
     testProp.current = { ...testProp.current, startTime: Date.now() };
-    dispatch(setStartTest());
+    startTest();
   };
 
   const endTestMethod = () => {
@@ -59,9 +55,8 @@ function MutableDataProvider(props: IMutableDataProvider) {
       testProp.current.startTime,
       testProp.current.endTime
     );
-
     testProp.current.totalTimeSpent += totalTimeMs;
-    dispatch(setEndTest());
+    endTest();
   };
 
   const pauseTestMethod = () => {
@@ -69,9 +64,7 @@ function MutableDataProvider(props: IMutableDataProvider) {
       testProp.current.startTime,
       Date.now()
     );
-
     testProp.current.totalTimeSpent += totalTimeMs;
-
     testProp.current.startTime = 0;
     testProp.current.endTime = 0;
   };
@@ -85,17 +78,19 @@ function MutableDataProvider(props: IMutableDataProvider) {
   };
 
   const resetTest = () => {
-    testProp.current.totalTimeSpent = 0;
-    testProp.current.startTime = 0;
-    testProp.current.endTime = 0;
-    testProp.current.eachWordTimeSpent = [];
-    testProp.current.secondsCharTyped = [];
-    testProp.current.eachWordError = [];
-    testProp.current.totalCharTyped = 0;
-    testProp.current.totalCorrectCharTyped = 0;
-    testProp.current.wpm = -1;
-    testProp.current.accuracy = -1;
-    dispatch(setresetTest());
+    testProp.current = {
+      totalTimeSpent: 0,
+      startTime: 0,
+      endTime: 0,
+      eachWordTimeSpent: [],
+      secondsCharTyped: [],
+      eachWordError: [],
+      totalCharTyped: 0,
+      totalCorrectCharTyped: 0,
+      wpm: -1,
+      accuracy: -1,
+    };
+    resetTestFlags();
   };
 
   const addWordTimeStamp = ({
@@ -116,8 +111,8 @@ function MutableDataProvider(props: IMutableDataProvider) {
     correctCharTypedCount: number;
   }) => {
     testProp.current.secondsCharTyped.push({
-      charTypedCount: charTypedCount,
-      correctCharTypedCount: correctCharTypedCount,
+      charTypedCount,
+      correctCharTypedCount,
       errorCharTypedCount: charTypedCount - correctCharTypedCount,
     });
   };
@@ -152,11 +147,9 @@ function MutableDataProvider(props: IMutableDataProvider) {
 
 export const useMutableData = () => {
   const context = useContext(MutableDataContext);
-
   if (context == null) {
-    throw new Error("useUser must be used within a UserProvider");
+    throw new Error("useMutableData must be used within MutableDataProvider");
   }
-
   return context;
 };
 

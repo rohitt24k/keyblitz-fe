@@ -1,18 +1,17 @@
 import { useMutableData } from "@/context/mutableDataProvider";
-import { resetCursor } from "@/lib/features/ghostCursor/ghostCursor";
-import { resetTrigger } from "@/lib/features/typingTests/typingTestsSlice";
-import { resetWords } from "@/lib/features/typingWord/typingWordSlice";
-import { useAppDispatch } from "@/lib/hooks";
+import { useTypingStore } from "@/lib/store-provider";
 
 export const useResetStates = () => {
-  const dispatch = useAppDispatch();
   const { resetTest } = useMutableData();
+  const toggleResetTrigger = useTypingStore((s) => s.toggleResetTrigger);
+  const resetCursors = useTypingStore((s) => s.resetCursors);
+  const initWords = useTypingStore((s) => s.initWords);
 
   const resetStates = () => {
-    dispatch(resetTrigger());
+    toggleResetTrigger();
     resetTest();
-    dispatch(resetCursor());
-    dispatch(resetWords());
+    resetCursors();
+    initWords();
   };
 
   return { resetStates };
