@@ -194,14 +194,21 @@ const TypingParagraphInputBox = ({
 
         if (keyInput === " ") {
           if (inputElement.value !== " ") {
+            const typedWord = inputElement.value.slice(0, -1);
+            const wordIsCorrect = typedWord === correctWordArr[wordIndex];
+
             inputElement.value = "";
             if (testStarted && wordIndex === wordArr.length - 1) {
               endTestMethod();
             } else if (testPaused !== false) {
               startTestMethod();
             }
-            increaseTotalCorrectCharTyped();
             increaseTotalCharTyped();
+            charTypedCount.current++;
+            if (wordIsCorrect) {
+              increaseTotalCorrectCharTyped();
+              correctCharTypedCount.current++;
+            }
             setWordIndex(wordIndex + 1);
             setLetterIndex(0);
             addWordTimeStamp({ index: wordIndex, timeStamp: Date.now() });

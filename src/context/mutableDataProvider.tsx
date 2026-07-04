@@ -2,6 +2,7 @@
 
 import { useTypingStore } from "@/lib/store-provider";
 import { calculateTimeDiff } from "@/utils/calculateTimeDiff";
+import { calculateWpm } from "@/utils/calculateWPM";
 import { createContext, MutableRefObject, useContext, useRef } from "react";
 
 interface IMutableDataContext {
@@ -42,6 +43,7 @@ function MutableDataProvider({ children }: IMutableDataProvider) {
 
   const startTest = useTypingStore((s) => s.startTest);
   const endTest = useTypingStore((s) => s.endTest);
+  const pauseTest = useTypingStore((s) => s.pauseTest);
   const resetTestFlags = useTypingStore((s) => s.resetTestFlags);
 
   const startTestMethod = () => {
@@ -56,6 +58,18 @@ function MutableDataProvider({ children }: IMutableDataProvider) {
       testProp.current.endTime
     );
     testProp.current.totalTimeSpent += totalTimeMs;
+
+    const { totalCorrectCharTyped, totalCharTyped, totalTimeSpent } =
+      testProp.current;
+    testProp.current.wpm = calculateWpm(
+      totalCorrectCharTyped / 5,
+      totalTimeSpent
+    );
+    testProp.current.accuracy =
+      totalCharTyped > 0
+        ? Math.round((totalCorrectCharTyped / totalCharTyped) * 100)
+        : 0;
+
     endTest();
   };
 
@@ -67,6 +81,7 @@ function MutableDataProvider({ children }: IMutableDataProvider) {
     testProp.current.totalTimeSpent += totalTimeMs;
     testProp.current.startTime = 0;
     testProp.current.endTime = 0;
+    pauseTest();
   };
 
   const increaseTotalCharTyped = () => {
