@@ -60,7 +60,7 @@ const CustomTooltip = ({
 }: TooltipProps<ValueType, NameType>) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-background-transparent p-2 rounded-lg shadow-[inset_0_0_0_1px] shadow-border">
+      <div className="bg-card p-2 rounded-lg shadow-[inset_0_0_0_1px] shadow-border">
         <p className="text-xs">{`${label}`}</p>
         <div className="flex gap-2 items-center">
           <div className="w-3 h-3" style={{ backgroundColor: payload[0].color }} />

@@ -11,9 +11,5 @@ interface Props {
 export default function ThemeManager({ children }: Props) {
   const [theme] = useState<Theme>("dark");
 
-  return (
-    <div className={`theme-${theme} bg-background text-foreground`}>
-      {children}
-    </div>
-  );
+  return <div className={` bg-background text-foreground`}>{children}</div>;
 }

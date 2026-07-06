@@ -1,36 +1,39 @@
 "use client";
 
-import FindHeightWidth from "@/components/FindHeightWidth";
 import FinishTest from "@/components/FinishTest";
 import TypingParagraph from "@/components/TypingParagraph";
+import { getWordsToType } from "@/actions/getWordsToType";
 import { useTypingStore } from "@/lib/store-provider";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 
 export default function Page() {
-  const testEnded = useTypingStore((s) => s.testEnded);
+  const resetTrigger = useTypingStore((s) => s.resetTrigger);
   const [showFinishTest, setShowFinishTest] = useState(false);
 
+  // Regenerate words whenever a restart is triggered
+  const words = useMemo(
+    () => getWordsToType(1, 50).trim().split(" "),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [resetTrigger],
+  );
+
+  // Clear finish screen on restart
   useEffect(() => {
-    let timer: NodeJS.Timeout | null = null;
-    if (testEnded) {
-      timer = setTimeout(() => setShowFinishTest(true), 1000);
-    } else {
-      setShowFinishTest(false);
-    }
-    return () => {
-      if (timer) clearTimeout(timer);
-    };
-  }, [testEnded]);
+    setShowFinishTest(false);
+  }, [resetTrigger]);
 
   return (
-    <FindHeightWidth>
-      {!testEnded ? (
-        <TypingParagraph />
-      ) : showFinishTest ? (
-        <FinishTest />
+    <div>
+      {!showFinishTest ? (
+        <TypingParagraph
+          words={words}
+          onTestEnd={() => {
+            setTimeout(() => setShowFinishTest(true), 1000);
+          }}
+        />
       ) : (
-        <div>Loading...</div>
+        <FinishTest />
       )}
-    </FindHeightWidth>
+    </div>
   );
 }

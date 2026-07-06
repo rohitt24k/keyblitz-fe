@@ -8,7 +8,12 @@ interface TypographyProps {
 
 export function H1({ className, children }: TypographyProps) {
   return (
-    <h1 className={cn("text-4xl font-bold tracking-tight", className)}>
+    <h1
+      className={cn(
+        "scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl",
+        className,
+      )}
+    >
       {children}
     </h1>
   );
@@ -16,7 +21,12 @@ export function H1({ className, children }: TypographyProps) {
 
 export function H2({ className, children }: TypographyProps) {
   return (
-    <h2 className={cn("text-3xl font-semibold tracking-tight", className)}>
+    <h2
+      className={cn(
+        "scroll-m-20 border-b border-border pb-2 text-3xl font-semibold tracking-tight first:mt-0",
+        className,
+      )}
+    >
       {children}
     </h2>
   );
@@ -24,19 +34,53 @@ export function H2({ className, children }: TypographyProps) {
 
 export function H3({ className, children }: TypographyProps) {
   return (
-    <h3 className={cn("text-2xl font-semibold tracking-tight", className)}>
+    <h3
+      className={cn(
+        "scroll-m-20 text-2xl font-semibold tracking-tight",
+        className,
+      )}
+    >
       {children}
     </h3>
   );
 }
 
+export function H4({ className, children }: TypographyProps) {
+  return (
+    <h4
+      className={cn(
+        "scroll-m-20 text-xl font-semibold tracking-tight",
+        className,
+      )}
+    >
+      {children}
+    </h4>
+  );
+}
+
+export function Lead({ className, children }: TypographyProps) {
+  return (
+    <p className={cn("text-xl text-muted-foreground", className)}>{children}</p>
+  );
+}
+
+export function Large({ className, children }: TypographyProps) {
+  return (
+    <div className={cn("text-lg font-semibold", className)}>{children}</div>
+  );
+}
+
 export function P({ className, children }: TypographyProps) {
-  return <p className={cn("leading-7", className)}>{children}</p>;
+  return (
+    <p className={cn("leading-7 [&:not(:first-child)]:mt-6", className)}>
+      {children}
+    </p>
+  );
 }
 
 export function Muted({ className, children }: TypographyProps) {
   return (
-    <p className={cn("text-sm text-foreground-light", className)}>{children}</p>
+    <p className={cn("text-sm text-muted-foreground", className)}>{children}</p>
   );
 }
 
@@ -45,5 +89,18 @@ export function Small({ className, children }: TypographyProps) {
     <small className={cn("text-sm font-medium leading-none", className)}>
       {children}
     </small>
+  );
+}
+
+export function InlineCode({ className, children }: TypographyProps) {
+  return (
+    <code
+      className={cn(
+        "relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold",
+        className,
+      )}
+    >
+      {children}
+    </code>
   );
 }

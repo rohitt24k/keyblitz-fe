@@ -5,11 +5,11 @@ interface Props {
   error: undefined | number;
 }
 
-const ShowLetterWithCursor = ({ letter, error }: Props) => {
+const TypingLetter = ({ letter, error }: Props) => {
   return (
     <span
-      className={`${error === 1 && "soft-error"} ${
-        error === 2 && "dark-error"
+      className={`${error === 1 ? "soft-error" : ""} ${
+        error === 2 ? "dark-error" : ""
       } ${error === 0 ? "text-foreground" : "text-foreground-light"}`}
     >
       {letter}
@@ -17,4 +17,4 @@ const ShowLetterWithCursor = ({ letter, error }: Props) => {
   );
 };
 
-export default ShowLetterWithCursor;
+export default TypingLetter;

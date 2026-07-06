@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { useTypingStore } from "@/lib/store-provider";
+import { Input } from "@/components/ui/input";
 import Close from "@/images/close.svg";
 
 interface Cursor {
@@ -45,16 +46,16 @@ const NewCursorInput: React.FC<{
 }> = ({ newCursor, onChange, onAdd }) => (
   <div className="flex gap-2 items-center shadow-[inset_0_0_0_1px] shadow-transparent hover:shadow-border rounded-xl">
     <div className="flex-1 flex justify-between border-b border-border py-4 mx-4">
-      <input
+      <Input
         type="text"
-        className="w-full pr-4 bg-transparent outline-none"
+        className="h-auto py-0 w-full bg-transparent border-0 shadow-none focus-visible:ring-0 rounded-none pr-4"
         placeholder="Enter the cursor name"
         value={newCursor.name}
         onChange={(e) => onChange({ ...newCursor, name: e.target.value })}
       />
       <div className="flex gap-4 items-center">
         <div className="border-l border-r border-border px-4">
-          <input
+          <Input
             type="number"
             min={1}
             max={150}
@@ -62,7 +63,7 @@ const NewCursorInput: React.FC<{
             onChange={(e) =>
               onChange({ ...newCursor, wpm: Number(e.target.value) })
             }
-            className="w-10 bg-transparent outline-none"
+            className="w-10 h-auto p-0 bg-transparent border-0 shadow-none focus-visible:ring-0 rounded-none"
             placeholder="WPM"
           />
         </div>

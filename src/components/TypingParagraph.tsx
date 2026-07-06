@@ -2,29 +2,68 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { gap } from "@/lib/constants";
-import { useParagraphStore } from "@/lib/store-provider";
 import ChangeLevelOfTypingParagraph from "./ChangeLevelOfTypingParagraph";
 import TypingParagraphInputBox from "./TypingParagraphInputBox";
-import WordDisplay from "./WordDisplay";
-import { useInputFocus } from "@/hooks/useInputFocus";
+import ParagraphDisplay from "./ParagraphDisplay";
 import CursorSVG from "@/images/cursor.svg";
 import GhostCursor from "./GhostCursor";
 import KeyboardInputHandler from "./KeyboardInputHandler";
-import Modal from "./ui/modal";
 import { Muted } from "./ui/typography";
+import { useTypingEngine } from "@/hooks/useTypingEngine";
 
-const TypingParagraph = () => {
-  const { inputRef, focusInput, handleFocus, handleBlur, inputIsFocused } =
-    useInputFocus();
-  const [cursorPosition, setCursorPosition] = useState({ left: 0, top: 0 });
-  const letterHeight = useParagraphStore((s) => s.height);
+interface TypingParagraphProps {
+  words: string[];
+  onKeyPress?: (char: string, isCorrect: boolean) => void;
+  onWordComplete?: (
+    wordIndex: number,
+    correctChars: number,
+    totalChars: number,
+  ) => void;
+  onTestStart?: () => void;
+  onTestEnd?: (results: ITestProp) => void;
+  onTestPause?: () => void;
+  onTestResume?: () => void;
+}
+
+const TypingParagraph = ({
+  words,
+  onKeyPress,
+  onWordComplete,
+  onTestStart,
+  onTestEnd,
+  onTestPause,
+  onTestResume,
+}: TypingParagraphProps) => {
+  const {
+    inputRef,
+    currentWordRef,
+    typingParagraphRef,
+    inputIsFocused,
+    focusInput,
+    handleFocus,
+    isModalOpen,
+    setIsModalOpen,
+    testEnded,
+    isReady,
+    letterHeight,
+    inputHandlers,
+  } = useTypingEngine({
+    words,
+    onKeyPress,
+    onWordComplete,
+    onTestStart,
+    onTestEnd,
+    onTestPause,
+    onTestResume,
+  });
 
   const cursorRef = useRef<HTMLDivElement>(null);
-  const typingParagraphRef = useRef<HTMLDivElement>(null);
-  const currentWordRef = useRef<HTMLDivElement>(null);
-
   const [showOverlay, setShowOverlay] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Focus the input once letter dimensions are measured and the area is ready
+  useEffect(() => {
+    if (isReady) focusInput();
+  }, [isReady, focusInput]);
 
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
@@ -42,11 +81,10 @@ const TypingParagraph = () => {
     if (!isModalOpen) focusInput();
   }, [isModalOpen, focusInput]);
 
+  if (!isReady) return null;
+
   return (
-    <ChangeLevelOfTypingParagraph
-      currentWordRef={currentWordRef}
-      setCursorPosition={setCursorPosition}
-    >
+    <ChangeLevelOfTypingParagraph currentWordRef={currentWordRef}>
       <KeyboardInputHandler
         handleFocus={handleFocus}
         inputIsFocused={inputIsFocused}
@@ -54,15 +92,15 @@ const TypingParagraph = () => {
         setIsModalOpen={setIsModalOpen}
       >
         <>
-          <Muted className="text-center mb-8">press ESC for options</Muted>
+          {/* <Muted className="text-center mb-8">press ESC for options</Muted>
 
-          <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+          <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} /> */}
 
           <GhostCursor>
             <div
               className="relative overflow-hidden select-none"
               style={{
-                height: `${letterHeight * 3 + gap * letterHeight * 2}px`,
+                height: `${letterHeight * 3 + gap * letterHeight * 2 + letterHeight * 0.25}px`,
               }}
               onMouseDown={(e) => {
                 e.preventDefault();
@@ -80,7 +118,7 @@ const TypingParagraph = () => {
                 </div>
               )}
               <div className="flex relative w-full">
-                <WordDisplay
+                <ParagraphDisplay
                   typingParagraphRef={typingParagraphRef}
                   cursorRef={cursorRef}
                   currentWordRef={currentWordRef}
@@ -89,12 +127,9 @@ const TypingParagraph = () => {
               </div>
               <TypingParagraphInputBox
                 inputRef={inputRef}
-                currentWordRef={currentWordRef}
-                typingParagraphRef={typingParagraphRef}
-                handleFocus={handleFocus}
-                handleBlur={handleBlur}
+                inputHandlers={inputHandlers}
                 isModalOpen={isModalOpen}
-                setIsModalOpen={setIsModalOpen}
+                testEnded={testEnded}
               />
             </div>
           </GhostCursor>

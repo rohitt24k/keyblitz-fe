@@ -7,11 +7,6 @@ import {
   TypingStore,
   TypingStoreApi,
 } from "./stores/typing-store";
-import {
-  createParagraphStore,
-  ParagraphStore,
-  ParagraphStoreApi,
-} from "./stores/paragraph-store";
 
 // ── Typing store ────────────────────────────────────────────────────────────
 
@@ -23,21 +18,6 @@ export function useTypingStore<T>(selector: (store: TypingStore) => T): T {
   return useStore(ctx, selector);
 }
 
-// ── Paragraph store ─────────────────────────────────────────────────────────
-
-const ParagraphStoreContext = createContext<ParagraphStoreApi | undefined>(
-  undefined
-);
-
-export function useParagraphStore<T>(
-  selector: (store: ParagraphStore) => T
-): T {
-  const ctx = useContext(ParagraphStoreContext);
-  if (!ctx)
-    throw new Error("useParagraphStore must be used within StoreProvider");
-  return useStore(ctx, selector);
-}
-
 // ── Combined provider ────────────────────────────────────────────────────────
 
 export default function StoreProvider({
@@ -46,16 +26,12 @@ export default function StoreProvider({
   children: React.ReactNode;
 }) {
   const typingRef = useRef<TypingStoreApi>();
-  const paragraphRef = useRef<ParagraphStoreApi>();
 
   if (!typingRef.current) typingRef.current = createTypingStore();
-  if (!paragraphRef.current) paragraphRef.current = createParagraphStore();
 
   return (
     <TypingStoreContext.Provider value={typingRef.current}>
-      <ParagraphStoreContext.Provider value={paragraphRef.current}>
-        {children}
-      </ParagraphStoreContext.Provider>
+      {children}
     </TypingStoreContext.Provider>
   );
 }

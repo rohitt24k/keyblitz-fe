@@ -7,6 +7,7 @@ import React, {
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Search from "@/images/search.svg";
+import { Input } from "@/components/ui/input";
 import ChaseCursor from "../ChaseCursor";
 
 interface ModalProps {
@@ -75,9 +76,9 @@ const ModalHeader: React.FC<ModalHeaderProps> = ({ heading, inputRef }) => (
     ) : (
       <label className="text-foreground-light flex gap-4 items-center px-4">
         <Search className="w-6 h-6" />
-        <input
+        <Input
           type="text"
-          className="py-6 flex-1 bg-transparent outline-none"
+          className="py-6 flex-1 h-auto bg-transparent border-0 shadow-none focus-visible:ring-0 rounded-none"
           ref={inputRef}
         />
       </label>

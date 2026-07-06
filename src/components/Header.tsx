@@ -3,7 +3,7 @@ import Logo from "./Logo";
 
 export default function Header() {
   return (
-    <header className="py-8 px-4">
+    <header className="py-8 px-4 flex items-center justify-between">
       <Logo />
     </header>
   );

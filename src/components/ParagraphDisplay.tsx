@@ -2,7 +2,7 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { useTypingStore, useParagraphStore } from "@/lib/store-provider";
+import { useTypingStore } from "@/lib/store-provider";
 import ShowWordWithCursor from "./ShowWordWithCursor";
 import { gap } from "@/lib/constants";
 
@@ -13,16 +13,16 @@ interface Props {
   showCursor: boolean;
 }
 
-const WordDisplay = ({
+const ParagraphDisplay = ({
   typingParagraphRef,
   cursorRef,
   currentWordRef,
   showCursor,
 }: Props) => {
-  const level = useParagraphStore((s) => s.level);
-  const currentWordPosition = useParagraphStore((s) => s.currentWordPosition);
-  const letterHeight = useParagraphStore((s) => s.height);
-  const letterWidth = useParagraphStore((s) => s.width);
+  const level = useTypingStore((s) => s.level);
+  const currentWordPosition = useTypingStore((s) => s.currentWordPosition);
+  const letterHeight = useTypingStore((s) => s.letterHeight);
+  const letterWidth = useTypingStore((s) => s.letterWidth);
 
   const wordArr = useTypingStore((s) => s.wordArr);
   const wordIndex = useTypingStore((s) => s.wordIndex);
@@ -30,28 +30,32 @@ const WordDisplay = ({
 
   return (
     <motion.div
-      className="flex flex-wrap gap-y-pa text-pa relative w-full mx-8"
+      className="flex flex-wrap gap-y-pa text-pa relative w-full mx-8 "
       initial={{ y: 0 }}
       animate={{
-        y: -1 * (level * letterHeight + Math.max(0, level) * letterHeight * gap),
+        y:
+          -1 * (level * letterHeight + Math.max(0, level) * letterHeight * gap),
       }}
       transition={{ type: "tween", duration: 0.05 }}
       style={{ columnGap: 1.5 * letterWidth }}
       ref={typingParagraphRef}
     >
-      <div
+      <motion.div
         ref={cursorRef}
-        className={`absolute h-full bg-foreground rounded-lg animate-pulse z-10 transition-all duration-100 ${
-          !showCursor && "!opacity-0"
-        }`}
-        style={{
-          width: letterWidth / 5,
+        className="absolute bg-foreground rounded-lg z-10 animate-pulse"
+        animate={{
           left:
             currentWordPosition.left +
             letterIndex * letterWidth +
-            (letterIndex - 1) * (letterWidth / 5) +
-            "px",
-          top: currentWordPosition.top + "px",
+            (letterIndex - 1) * (letterWidth / 5),
+          top: currentWordPosition.top,
+        }}
+        transition={{
+          left: { duration: 0.125 },
+          top: { duration: 0.1 },
+        }}
+        style={{
+          width: letterWidth / 5,
           height: letterHeight * 1.1,
         }}
       />
@@ -73,4 +77,4 @@ const WordDisplay = ({
   );
 };
 
-export default WordDisplay;
+export default ParagraphDisplay;

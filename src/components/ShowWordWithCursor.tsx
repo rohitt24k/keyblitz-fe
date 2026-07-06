@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import ShowLetterWithCursor from "./ShowLetterWithCursor";
+import TypingLetter from "./TypingLetter";
 import { motion } from "framer-motion";
-import { useTypingStore, useParagraphStore } from "@/lib/store-provider";
+import { useTypingStore } from "@/lib/store-provider";
 
 interface Props {
   wordProp: wordProp;
@@ -27,17 +27,17 @@ const ShowWordWithCursor = ({
   showCursor,
 }: Props) => {
   const [ghostsLeftPos, setGhostsLeftPos] = useState<number[]>([]);
-  const width = useParagraphStore((s) => s.width);
+  const letterWidth = useTypingStore((s) => s.letterWidth);
   const cursors = useTypingStore((s) => s.cursors);
 
   useEffect(() => {
     const ghostPos = cursors.map((cursor) =>
       cursor.wordIndex === index
-        ? cursor.letterIndex * width + cursor.letterIndex * (width / 5)
-        : 0
+        ? cursor.letterIndex * letterWidth + cursor.letterIndex * (letterWidth / 5)
+        : 0,
     );
     setGhostsLeftPos(ghostPos);
-  }, [width, cursors, index]);
+  }, [letterWidth, cursors, index]);
 
   return (
     <div
@@ -45,9 +45,9 @@ const ShowWordWithCursor = ({
       id="wordContainer"
       ref={isCurrent ? currentWordRef : null}
     >
-      <div className="flex z-10" style={{ gap: width / 5 }}>
+      <div className="flex z-10" style={{ gap: letterWidth / 5 }}>
         {wordProp.word.split("").map((letter, i) => (
-          <ShowLetterWithCursor
+          <TypingLetter
             letter={letter}
             key={i}
             error={wordProp.error?.letterError[i]}
@@ -63,12 +63,12 @@ const ShowWordWithCursor = ({
             initial={{ x: ghostsLeftPos[i] }}
             animate={{ x: ghostsLeftPos[i] }}
             className={`absolute h-full bg-ghost-cursor rounded-lg animate-pulse z-[5] ${
-              !showCursor && "!opacity-0"
+              !showCursor && "opacity-0!"
             }`}
             transition={{ type: "tween", duration: 0.15 }}
-            style={{ width: width / 5, left: -width / 5 }}
+            style={{ width: letterWidth / 5, left: -letterWidth / 5 }}
           />
-        ) : null
+        ) : null,
       )}
 
       {!isCurrent && index < wordIndex && wordProp.error?.error && (

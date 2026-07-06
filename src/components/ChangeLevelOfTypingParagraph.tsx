@@ -1,20 +1,17 @@
 "use client";
 
 import { gap } from "@/lib/constants";
-import { useTypingStore, useParagraphStore } from "@/lib/store-provider";
+import { useTypingStore } from "@/lib/store-provider";
 import React, { useCallback, useEffect } from "react";
 
 interface Props {
   children: React.ReactNode;
   currentWordRef: React.RefObject<HTMLDivElement>;
-  setCursorPosition: React.Dispatch<
-    React.SetStateAction<{ left: number; top: number }>
-  >;
 }
 
 function debounce<T extends (...args: unknown[]) => void>(
   func: T,
-  delay: number
+  delay: number,
 ): T {
   let timeoutId: ReturnType<typeof setTimeout>;
   return function (this: unknown, ...args: Parameters<T>) {
@@ -23,15 +20,10 @@ function debounce<T extends (...args: unknown[]) => void>(
   } as T;
 }
 
-const ChangeLevelOfTypingParagraph = ({
-  children,
-  currentWordRef,
-  setCursorPosition,
-}: Props) => {
-  const letterHeight = useParagraphStore((s) => s.height);
-  const letterWidth = useParagraphStore((s) => s.width);
-  const setWordPosition = useParagraphStore((s) => s.setWordPosition);
-  const setLevel = useParagraphStore((s) => s.setLevel);
+const ChangeLevelOfTypingParagraph = ({ children, currentWordRef }: Props) => {
+  const letterHeight = useTypingStore((s) => s.letterHeight);
+  const setWordPosition = useTypingStore((s) => s.setWordPosition);
+  const setLevel = useTypingStore((s) => s.setLevel);
 
   const letterIndex = useTypingStore((s) => s.letterIndex);
   const wordIndex = useTypingStore((s) => s.wordIndex);
@@ -54,56 +46,29 @@ const ChangeLevelOfTypingParagraph = ({
 
       const totalHeight = parentRect.height;
       const totalLevel = Math.round(
-        (totalHeight + gap * letterHeight) / (letterHeight + gap * letterHeight)
+        (totalHeight + gap * letterHeight) /
+          (letterHeight + gap * letterHeight),
       );
       const h = Math.round(
         (topRelativeToParent + gap * letterHeight) /
-          (letterHeight + gap * letterHeight)
+          (letterHeight + gap * letterHeight),
       );
 
       if (h === 0) {
         setLevel(0, h);
-        setCursorPosition({
-          top: 0,
-          left:
-            elementRect.left +
-            letterWidth * letterIndex +
-            letterIndex * (letterWidth / 4),
-        });
       } else if (h === totalLevel - 1) {
-        setCursorPosition({
-          top: 2 * letterHeight + 2 * letterHeight * gap,
-          left:
-            elementRect.left +
-            letterWidth * letterIndex +
-            letterIndex * (letterWidth / 4),
-        });
         setLevel(h - 2, h);
       } else {
-        setCursorPosition({
-          top: 1 * letterHeight + 1 * letterHeight * gap,
-          left:
-            elementRect.left +
-            letterWidth * letterIndex +
-            letterIndex * (letterWidth / 4),
-        });
         setLevel(h - 1, h);
       }
     }
-  }, [
-    currentWordRef,
-    letterHeight,
-    letterIndex,
-    letterWidth,
-    setCursorPosition,
-    setLevel,
-    setWordPosition,
-  ]);
+  }, [currentWordRef, letterHeight, setLevel, setWordPosition]);
 
   useEffect(() => {
     changeLevelOfTypingParagraph();
   }, [letterIndex, wordIndex, changeLevelOfTypingParagraph]);
 
+  // recalculate when the window is resized
   useEffect(() => {
     const debouncedChangeLevel = debounce(changeLevelOfTypingParagraph, 300);
     window.addEventListener("resize", debouncedChangeLevel);
