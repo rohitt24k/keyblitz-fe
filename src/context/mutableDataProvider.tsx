@@ -56,7 +56,7 @@ function MutableDataProvider({ children }: IMutableDataProvider) {
     testProp.current.endTime = Date.now();
     const { totalTimeMs } = calculateTimeDiff(
       testProp.current.startTime,
-      testProp.current.endTime
+      testProp.current.endTime,
     );
     testProp.current.totalTimeSpent += totalTimeMs;
 
@@ -64,7 +64,7 @@ function MutableDataProvider({ children }: IMutableDataProvider) {
       testProp.current;
     testProp.current.wpm = calculateWpm(
       totalCorrectCharTyped / 5,
-      totalTimeSpent
+      totalTimeSpent,
     );
     testProp.current.accuracy =
       totalCharTyped > 0
@@ -77,7 +77,7 @@ function MutableDataProvider({ children }: IMutableDataProvider) {
   const pauseTestMethod = () => {
     const { totalTimeMs } = calculateTimeDiff(
       testProp.current.startTime,
-      Date.now()
+      Date.now(),
     );
     testProp.current.totalTimeSpent += totalTimeMs;
     testProp.current.startTime = 0;

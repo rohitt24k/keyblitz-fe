@@ -29,7 +29,7 @@ const GhostCursor = ({ children }: IGhostCursorProps) => {
 
   const totalCharCount = useMemo(
     () => correctWordArr.reduce((acc, word) => acc + word.length, 0),
-    [correctWordArr]
+    [correctWordArr],
   );
 
   const setupCursorInterval = useCallback(
@@ -48,8 +48,7 @@ const GhostCursor = ({ children }: IGhostCursorProps) => {
 
         if (
           correctWordArr[current.wordIndex] &&
-          current.letterIndex + 1 <
-            correctWordArr[current.wordIndex].length
+          current.letterIndex + 1 < correctWordArr[current.wordIndex].length
         ) {
           moveCursor(cursorIndex, current.wordIndex, current.letterIndex + 1);
         } else {
@@ -57,7 +56,7 @@ const GhostCursor = ({ children }: IGhostCursorProps) => {
         }
       }, eachCharTime);
     },
-    [correctWordArr, moveCursor, totalCharCount]
+    [correctWordArr, moveCursor, totalCharCount],
   );
 
   useEffect(() => {

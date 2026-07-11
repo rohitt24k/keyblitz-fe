@@ -8,9 +8,9 @@ How keystroke data flows from typing → storage → chart/results, and what the
 
 The app intentionally splits state into two systems to avoid re-render overhead during typing:
 
-| System | Location | What it holds |
-|---|---|---|
-| **Zustand stores** | `src/lib/stores/` | UI state — word array, current word/letter index, test lifecycle flags, ghost cursor positions |
+| System                  | Location                              | What it holds                                                                                                             |
+| ----------------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| **Zustand stores**      | `src/lib/stores/`                     | UI state — word array, current word/letter index, test lifecycle flags, ghost cursor positions                            |
 | **MutableDataProvider** | `src/context/mutableDataProvider.tsx` | Test metrics — timing, character counts, per-second snapshots, per-word errors (all in a `useRef`, never causes a render) |
 
 ---
@@ -251,12 +251,12 @@ FinishTest mounts
 
 ## 8. Metric reference
 
-| Metric | Formula |
-|---|---|
-| Net WPM (final) | `Math.round((totalCorrectCharTyped / 5) / (totalTimeSpent / 60000))` |
-| Accuracy | `Math.round((totalCorrectCharTyped / totalCharTyped) × 100)` |
-| Per-second WPM | `correctCharTypedCount × 12` (where count includes spaces) |
-| Per-second Raw WPM | `charTypedCount × 12` (where count includes spaces) |
+| Metric             | Formula                                                              |
+| ------------------ | -------------------------------------------------------------------- |
+| Net WPM (final)    | `Math.round((totalCorrectCharTyped / 5) / (totalTimeSpent / 60000))` |
+| Accuracy           | `Math.round((totalCorrectCharTyped / totalCharTyped) × 100)`         |
+| Per-second WPM     | `correctCharTypedCount × 12` (where count includes spaces)           |
+| Per-second Raw WPM | `charTypedCount × 12` (where count includes spaces)                  |
 
 Space between words counts as 1 character in all of the above, consistent with the 5-char-per-word standard (a 4-letter word + its trailing space = 5 chars = 1 word). A space is counted as correct only when the entire preceding word was typed without error.
 

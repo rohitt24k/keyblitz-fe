@@ -86,7 +86,10 @@ export class RoomObject implements DurableObject {
 
   // ─── DO lifecycle methods (replace addEventListener) ───────────────────────
 
-  async webSocketMessage(ws: WebSocket, data: string | ArrayBuffer): Promise<void> {
+  async webSocketMessage(
+    ws: WebSocket,
+    data: string | ArrayBuffer,
+  ): Promise<void> {
     await this.boot();
     try {
       const msg = JSON.parse(data as string) as ClientMessage;
@@ -125,7 +128,11 @@ export class RoomObject implements DurableObject {
     } else {
       // TTL cleanup — race finished (or abandoned lobby), evict the room
       for (const ws of this.state.getWebSockets()) {
-        try { ws.close(1001, "Room expired"); } catch { /* already gone */ }
+        try {
+          ws.close(1001, "Room expired");
+        } catch {
+          /* already gone */
+        }
       }
       await this.state.storage.deleteAll();
     }
@@ -154,7 +161,9 @@ export class RoomObject implements DurableObject {
 
       // Re-attach live hibernated sockets using the attachment written at join time
       for (const ws of this.state.getWebSockets()) {
-        const attachment = ws.deserializeAttachment() as { playerId: string } | null;
+        const attachment = ws.deserializeAttachment() as {
+          playerId: string;
+        } | null;
         if (!attachment) continue;
         const { playerId } = attachment;
         const player = this.players.get(playerId);
@@ -203,7 +212,11 @@ export class RoomObject implements DurableObject {
 
   // ─── Join / reconnect ──────────────────────────────────────────────────────
 
-  private handleJoin(socket: WebSocket, playerId: string, username: string): void {
+  private handleJoin(
+    socket: WebSocket,
+    playerId: string,
+    username: string,
+  ): void {
     // Bind this playerId to the socket so we can recover it after hibernation
     socket.serializeAttachment({ playerId });
 
@@ -214,7 +227,11 @@ export class RoomObject implements DurableObject {
       const oldWs = this.sockets.get(playerId);
       if (oldWs && oldWs !== socket) {
         // Close the old hibernated socket cleanly
-        try { oldWs.close(1000, "Replaced by reconnect"); } catch { /* already gone */ }
+        try {
+          oldWs.close(1000, "Replaced by reconnect");
+        } catch {
+          /* already gone */
+        }
       }
       existing.isConnected = true;
       this.sockets.set(playerId, socket);
@@ -267,7 +284,10 @@ export class RoomObject implements DurableObject {
   private handleStart(socket: WebSocket): void {
     const playerId = this.playerIdFromSocket(socket);
     if (playerId !== this.creatorId) {
-      this.send(socket, { type: "error", message: "Only the host can start the race." });
+      this.send(socket, {
+        type: "error",
+        message: "Only the host can start the race.",
+      });
       return;
     }
     if (this.status !== "lobby") {
@@ -287,15 +307,17 @@ export class RoomObject implements DurableObject {
 
     // Use an alarm instead of setTimeout — survives DO hibernation
     this.state.waitUntil(
-      this.persist().then(() =>
-        this.state.storage.setAlarm(Date.now() + 5000),
-      ),
+      this.persist().then(() => this.state.storage.setAlarm(Date.now() + 5000)),
     );
   }
 
   // ─── Progress ─────────────────────────────────────────────────────────────
 
-  private handleProgress(socket: WebSocket, wordIndex: number, letterIndex: number): void {
+  private handleProgress(
+    socket: WebSocket,
+    wordIndex: number,
+    letterIndex: number,
+  ): void {
     if (this.status !== "racing" || this.startTime === null) return;
 
     const playerId = this.playerIdFromSocket(socket);
@@ -317,7 +339,7 @@ export class RoomObject implements DurableObject {
     const charIndex = this.charCount(wordIndex, letterIndex);
     const elapsedMs = Date.now() - this.startTime;
     if (charIndex > 0 && elapsedMs > 0) {
-      player.wpm = Math.round((charIndex / 5) / (elapsedMs / 60000));
+      player.wpm = Math.round(charIndex / 5 / (elapsedMs / 60000));
     }
 
     if (wordIndex >= this.words.length && player.finishedAt === null) {
@@ -372,7 +394,9 @@ export class RoomObject implements DurableObject {
       this.persist()
         .then(() => this.state.storage.setAlarm(Date.now() + ROOM_TTL_MS))
         .then(() => this.persistResults(results))
-        .catch((err) => console.error("[RoomObject] Post-finish tasks failed:", err)),
+        .catch((err) =>
+          console.error("[RoomObject] Post-finish tasks failed:", err),
+        ),
     );
   }
 
@@ -424,7 +448,9 @@ export class RoomObject implements DurableObject {
   }
 
   private broadcastLeaderboard(): void {
-    const connected = Array.from(this.players.values()).filter((p) => p.isConnected);
+    const connected = Array.from(this.players.values()).filter(
+      (p) => p.isConnected,
+    );
     if (connected.length === 0) {
       // No one online — stop ticking to allow hibernation
       this.stopLeaderboardTick();
@@ -460,7 +486,9 @@ export class RoomObject implements DurableObject {
   // ─── Disconnect handling ───────────────────────────────────────────────────
 
   private handleClose(socket: WebSocket): void {
-    const attachment = socket.deserializeAttachment() as { playerId: string } | null;
+    const attachment = socket.deserializeAttachment() as {
+      playerId: string;
+    } | null;
     if (!attachment) return;
     const { playerId } = attachment;
 
@@ -473,7 +501,9 @@ export class RoomObject implements DurableObject {
       this.players.delete(playerId);
 
       if (playerId === this.creatorId) {
-        const next = Array.from(this.players.values()).find((p) => p.isConnected);
+        const next = Array.from(this.players.values()).find(
+          (p) => p.isConnected,
+        );
         this.creatorId = next ? next.playerId : null;
       }
 
@@ -490,7 +520,9 @@ export class RoomObject implements DurableObject {
       player.isConnected = false;
 
       if (playerId === this.creatorId) {
-        const next = Array.from(this.players.values()).find((p) => p.isConnected);
+        const next = Array.from(this.players.values()).find(
+          (p) => p.isConnected,
+        );
         this.creatorId = next ? next.playerId : null;
       }
 
@@ -504,7 +536,9 @@ export class RoomObject implements DurableObject {
   // ─── Helpers ───────────────────────────────────────────────────────────────
 
   private playerIdFromSocket(socket: WebSocket): string | undefined {
-    const attachment = socket.deserializeAttachment() as { playerId: string } | null;
+    const attachment = socket.deserializeAttachment() as {
+      playerId: string;
+    } | null;
     return attachment?.playerId;
   }
 

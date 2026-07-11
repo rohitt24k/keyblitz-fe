@@ -13,7 +13,7 @@ const RestartButton = () => {
   }
 
   return (
-    <div className=" grid place-items-center mt-8">
+    <div className="mt-8 grid place-items-center">
       <Button onClick={handleRestartClick}>Restart</Button>
     </div>
   );

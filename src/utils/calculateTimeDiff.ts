@@ -1,6 +1,6 @@
 export function calculateTimeDiff(
   startTime: number,
-  endTime: number
+  endTime: number,
 ): {
   totalTimeMs: number;
   minutes: number;

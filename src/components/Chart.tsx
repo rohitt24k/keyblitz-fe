@@ -27,11 +27,7 @@ interface DataPoint {
   errorCount: number | null;
 }
 
-const CustomCircle = (props: {
-  cx?: number;
-  cy?: number;
-  fill?: string;
-}) => {
+const CustomCircle = (props: { cx?: number; cy?: number; fill?: string }) => {
   const { cx, cy, fill } = props;
   if (!cx || !cy) return null;
   return (
@@ -60,19 +56,25 @@ const CustomTooltip = ({
 }: TooltipProps<ValueType, NameType>) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-card p-2 rounded-lg shadow-[inset_0_0_0_1px] shadow-border">
+      <div className="bg-card shadow-border rounded-lg p-2 shadow-[inset_0_0_0_1px]">
         <p className="text-xs">{`${label}`}</p>
-        <div className="flex gap-2 items-center">
-          <div className="w-3 h-3" style={{ backgroundColor: payload[0].color }} />
+        <div className="flex items-center gap-2">
+          <div
+            className="h-3 w-3"
+            style={{ backgroundColor: payload[0].color }}
+          />
           <p className="text-xs">{`${payload[0].name}: ${payload[0].value}`}</p>
         </div>
-        <div className="flex gap-2 items-center">
-          <div className="w-3 h-3" style={{ backgroundColor: payload[1].color }} />
+        <div className="flex items-center gap-2">
+          <div
+            className="h-3 w-3"
+            style={{ backgroundColor: payload[1].color }}
+          />
           <p className="text-xs">{`${payload[1].name}: ${payload[1].value}`}</p>
         </div>
         {payload.length > 2 && (
-          <div className="flex gap-2 items-center">
-            <div className="w-3 h-3 bg-destructive" />
+          <div className="flex items-center gap-2">
+            <div className="bg-destructive h-3 w-3" />
             <p className="text-xs">{`${payload[2].name}: ${payload[2].value}`}</p>
           </div>
         )}
@@ -91,7 +93,8 @@ const Chart = () => {
       index: index + 1,
       wpm: calculateWpm(data.correctCharTypedCount / 5, 1000),
       rawWPM: calculateWpm(data.charTypedCount / 5, 1000),
-      errorCount: data.errorCharTypedCount > 0 ? data.errorCharTypedCount : null,
+      errorCount:
+        data.errorCharTypedCount > 0 ? data.errorCharTypedCount : null,
     }));
 
     const alpha = 0.2;

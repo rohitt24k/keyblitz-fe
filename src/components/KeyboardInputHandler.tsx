@@ -33,7 +33,7 @@ export const KeyboardInputHandler: React.FC<KeyboardInputHandlerProps> = ({
           break;
       }
     },
-    [handleFocus, setIsModalOpen]
+    [handleFocus, setIsModalOpen],
   );
 
   useEffect(() => {

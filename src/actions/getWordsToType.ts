@@ -14,7 +14,7 @@ const wordsAccordingToLevel = {
 
 export const getWordsToType = (
   level: 1 | 2 | 3 | 4 | 5,
-  numberOfWords: number
+  numberOfWords: number,
 ) => {
   const wordsList = wordsAccordingToLevel[level];
   let randomIndex = Math.floor(Math.random() * wordsList.length);

@@ -72,14 +72,21 @@ function RaceRoom({
     [playerId, setCursors],
   );
 
-  const { status, players, words, creatorId, isConnected, startRace, sendProgress } =
-    useRaceSocket({
-      roomCode,
-      playerId,
-      username,
-      onFinished: handleFinished,
-      onLeaderboard: handleLeaderboard,
-    });
+  const {
+    status,
+    players,
+    words,
+    creatorId,
+    isConnected,
+    startRace,
+    sendProgress,
+  } = useRaceSocket({
+    roomCode,
+    playerId,
+    username,
+    onFinished: handleFinished,
+    onLeaderboard: handleLeaderboard,
+  });
 
   // Clear cursors when race starts so GhostCursor's WPM animation never fires
   useEffect(() => {
@@ -105,8 +112,13 @@ function RaceRoom({
 
   // ── Results screen (shown immediately when local player finishes) ─────────────
   if (localFinished) {
-    const { totalTimeSpent, totalCorrectCharTyped, totalCharTyped, wpm, accuracy } =
-      testProp.current;
+    const {
+      totalTimeSpent,
+      totalCorrectCharTyped,
+      totalCharTyped,
+      wpm,
+      accuracy,
+    } = testProp.current;
     const { minutes, seconds } = calculateTimeDiff(0, totalTimeSpent);
     const timeLabel = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
 
@@ -121,9 +133,9 @@ function RaceRoom({
     return (
       <div className="flex flex-col gap-8 lg:flex-row">
         {/* Left: personal stats + chart */}
-        <div className="flex-1 min-w-0 space-y-4">
+        <div className="min-w-0 flex-1 space-y-4">
           <H2>Your Results</H2>
-          <div className="flex gap-8 flex-wrap">
+          <div className="flex flex-wrap gap-8">
             <div>
               <Muted>WPM</Muted>
               <p className="text-4xl font-bold">{wpm}</p>
@@ -150,46 +162,46 @@ function RaceRoom({
         </div>
 
         {/* Right: leaderboard */}
-        <div className="w-full lg:w-64 shrink-0 space-y-4">
+        <div className="w-full shrink-0 space-y-4 lg:w-64">
           <H2>Leaderboard</H2>
           <div className="flex flex-col gap-2">
             {sortedFinal
               ? sortedFinal.map((r) => (
                   <div key={r.playerId} className="flex items-center gap-2">
-                    <span className="text-muted-foreground w-6 text-sm tabular-nums shrink-0">
+                    <span className="text-muted-foreground w-6 shrink-0 text-sm tabular-nums">
                       #{r.rank}
                     </span>
-                    <span className="flex-1 text-sm truncate">
+                    <span className="flex-1 truncate text-sm">
                       {r.username}
                       {r.playerId === playerId && (
                         <span className="text-muted-foreground"> (you)</span>
                       )}
                     </span>
-                    <span className="tabular-nums text-sm font-medium shrink-0">
+                    <span className="shrink-0 text-sm font-medium tabular-nums">
                       {r.wpm} wpm
                     </span>
                   </div>
                 ))
               : sortedLive.map((e, i) => (
                   <div key={e.playerId} className="flex items-center gap-2">
-                    <span className="text-muted-foreground w-6 text-sm tabular-nums shrink-0">
+                    <span className="text-muted-foreground w-6 shrink-0 text-sm tabular-nums">
                       #{i + 1}
                     </span>
-                    <span className="flex-1 text-sm truncate">
+                    <span className="flex-1 truncate text-sm">
                       {e.username}
                       {e.playerId === playerId && (
                         <span className="text-muted-foreground"> (you)</span>
                       )}
                     </span>
-                    <span className="tabular-nums text-sm font-medium shrink-0">
+                    <span className="shrink-0 text-sm font-medium tabular-nums">
                       {e.wpm} wpm
                     </span>
                     {e.isFinished ? (
-                      <span className="text-xs text-muted-foreground shrink-0">
+                      <span className="text-muted-foreground shrink-0 text-xs">
                         done
                       </span>
                     ) : (
-                      <span className="text-xs text-muted-foreground animate-pulse shrink-0">
+                      <span className="text-muted-foreground shrink-0 animate-pulse text-xs">
                         racing
                       </span>
                     )}
@@ -220,7 +232,7 @@ function RaceRoom({
         <div className="flex flex-col gap-2">
           {sorted.map((r) => (
             <div key={r.playerId} className="flex items-center gap-2">
-              <span className="text-muted-foreground w-6 text-sm tabular-nums shrink-0">
+              <span className="text-muted-foreground w-6 shrink-0 text-sm tabular-nums">
                 #{r.rank}
               </span>
               <span className="flex-1 text-sm">
@@ -229,7 +241,7 @@ function RaceRoom({
                   <span className="text-muted-foreground"> (you)</span>
                 )}
               </span>
-              <span className="tabular-nums text-sm font-medium shrink-0">
+              <span className="shrink-0 text-sm font-medium tabular-nums">
                 {r.wpm} wpm
               </span>
             </div>
@@ -293,7 +305,7 @@ function UsernamePrompt({ onSet }: { onSet: (username: string) => void }) {
   }
 
   return (
-    <div className="flex flex-col gap-4 max-w-sm mt-16">
+    <div className="mt-16 flex max-w-sm flex-col gap-4">
       <h2 className="text-2xl font-semibold">Enter your username</h2>
       <input
         type="text"
@@ -302,7 +314,7 @@ function UsernamePrompt({ onSet }: { onSet: (username: string) => void }) {
         onKeyDown={(e) => e.key === "Enter" && submit()}
         placeholder="username"
         maxLength={20}
-        className="rounded-md bg-accent px-4 py-3 text-lg text-foreground outline-none focus:ring-2 focus:ring-primary"
+        className="bg-accent text-foreground focus:ring-primary rounded-md px-4 py-3 text-lg outline-none focus:ring-2"
         autoFocus
       />
       <Button variant="primary" onClick={submit} className="self-start">

@@ -31,7 +31,7 @@ const ModalOptions: React.FC<ModalOptionsProps> = ({
 }) => (
   <div className="flex flex-col">
     <div
-      className="px-4 py-2 cursor-pointer transition-all duration-150 hover:bg-accent"
+      className="hover:bg-accent cursor-pointer px-4 py-2 transition-all duration-150"
       onClick={() => {
         setContent(<ChaseCursor />);
         setHeading("Chase the cursor");
@@ -54,15 +54,15 @@ const ModalOverlay: React.FC<{ onClose: () => void }> = ({ onClose }) => (
 );
 
 const ModalContainer: React.FC<{ children: ReactNode }> = ({ children }) => (
-  <div className="fixed inset-0 z-50 flex flex-col items-center justify-center outline-none px-4 pointer-events-none">
+  <div className="pointer-events-none fixed inset-0 z-50 flex flex-col items-center justify-center px-4 outline-none">
     <motion.div
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       exit={{ y: -20, opacity: 0 }}
       transition={{ duration: 0.15, type: "tween" }}
-      className="flex-1 my-[15vh] w-full xs:w-[500px] overflow-hidden"
+      className="xs:w-[500px] my-[15vh] w-full flex-1 overflow-hidden"
     >
-      <div className="bg-background rounded-xl pointer-events-auto">
+      <div className="bg-background pointer-events-auto rounded-xl">
         {children}
       </div>
     </motion.div>
@@ -74,11 +74,11 @@ const ModalHeader: React.FC<ModalHeaderProps> = ({ heading, inputRef }) => (
     {heading ? (
       <div className="px-4 py-6 select-none">{heading}</div>
     ) : (
-      <label className="text-foreground-light flex gap-4 items-center px-4">
-        <Search className="w-6 h-6" />
+      <label className="text-foreground-light flex items-center gap-4 px-4">
+        <Search className="h-6 w-6" />
         <Input
           type="text"
-          className="py-6 flex-1 h-auto bg-transparent border-0 shadow-none focus-visible:ring-0 rounded-none"
+          className="h-auto flex-1 rounded-none border-0 bg-transparent py-6 shadow-none focus-visible:ring-0"
           ref={inputRef}
         />
       </label>
@@ -88,7 +88,7 @@ const ModalHeader: React.FC<ModalHeaderProps> = ({ heading, inputRef }) => (
 
 const ModalBody: React.FC<{ content: ReactNode }> = ({ content }) => (
   <div>
-    <div className="border-t border-border" />
+    <div className="border-border border-t" />
     <div className="text-foreground pb-2">{content}</div>
   </div>
 );

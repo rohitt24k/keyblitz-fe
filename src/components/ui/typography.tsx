@@ -23,7 +23,7 @@ export function H2({ className, children }: TypographyProps) {
   return (
     <h2
       className={cn(
-        "scroll-m-20 border-b border-border pb-2 text-3xl font-semibold tracking-tight first:mt-0",
+        "border-border scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight first:mt-0",
         className,
       )}
     >
@@ -60,7 +60,7 @@ export function H4({ className, children }: TypographyProps) {
 
 export function Lead({ className, children }: TypographyProps) {
   return (
-    <p className={cn("text-xl text-muted-foreground", className)}>{children}</p>
+    <p className={cn("text-muted-foreground text-xl", className)}>{children}</p>
   );
 }
 
@@ -80,13 +80,13 @@ export function P({ className, children }: TypographyProps) {
 
 export function Muted({ className, children }: TypographyProps) {
   return (
-    <p className={cn("text-sm text-muted-foreground", className)}>{children}</p>
+    <p className={cn("text-muted-foreground text-sm", className)}>{children}</p>
   );
 }
 
 export function Small({ className, children }: TypographyProps) {
   return (
-    <small className={cn("text-sm font-medium leading-none", className)}>
+    <small className={cn("text-sm leading-none font-medium", className)}>
       {children}
     </small>
   );
@@ -96,7 +96,7 @@ export function InlineCode({ className, children }: TypographyProps) {
   return (
     <code
       className={cn(
-        "relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold",
+        "bg-muted relative rounded px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold",
         className,
       )}
     >

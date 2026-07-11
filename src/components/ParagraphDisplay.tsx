@@ -30,7 +30,7 @@ const ParagraphDisplay = ({
 
   return (
     <motion.div
-      className="flex flex-wrap gap-y-pa text-pa relative w-full mx-8 "
+      className="gap-y-pa text-pa relative mx-8 flex w-full flex-wrap"
       initial={{ y: 0 }}
       animate={{
         y:
@@ -42,7 +42,7 @@ const ParagraphDisplay = ({
     >
       <motion.div
         ref={cursorRef}
-        className="absolute bg-foreground rounded-lg z-10 animate-pulse"
+        className="bg-foreground absolute z-10 animate-pulse rounded-lg"
         animate={{
           left:
             currentWordPosition.left +

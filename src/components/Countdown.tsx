@@ -21,7 +21,7 @@ export default function Countdown({ seconds = 5, onComplete }: CountdownProps) {
 
   return (
     <div className="flex h-64 items-center justify-center">
-      <span className="tabular-nums text-8xl font-extrabold text-foreground">
+      <span className="text-foreground text-8xl font-extrabold tabular-nums">
         {count > 0 ? count : "GO!"}
       </span>
     </div>

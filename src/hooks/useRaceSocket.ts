@@ -40,7 +40,10 @@ export function useRaceSocket({
   const wsRef = useRef<WebSocket | null>(null);
   // Throttle: hold the latest position and flush on a 150ms timer
   const throttleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const pendingProgressRef = useRef<{ wordIndex: number; letterIndex: number } | null>(null);
+  const pendingProgressRef = useRef<{
+    wordIndex: number;
+    letterIndex: number;
+  } | null>(null);
 
   const [state, setState] = useState<RaceSocketState>({
     status: "lobby",

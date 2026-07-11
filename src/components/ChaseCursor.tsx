@@ -21,18 +21,18 @@ const CursorItem: React.FC<{ cursor: Cursor; onDelete: () => void }> = ({
   cursor,
   onDelete,
 }) => (
-  <div className="flex gap-2 items-center shadow-[inset_0_0_0_1px] shadow-transparent hover:shadow-border rounded-xl">
-    <div className="flex-1 flex justify-between border-b border-border py-4 mx-4">
+  <div className="hover:shadow-border flex items-center gap-2 rounded-xl shadow-[inset_0_0_0_1px] shadow-transparent">
+    <div className="border-border mx-4 flex flex-1 justify-between border-b py-4">
       <p>{cursor.name}</p>
-      <div className="flex gap-4 items-center">
-        <div className="border-l border-border pl-4">
+      <div className="flex items-center gap-4">
+        <div className="border-border border-l pl-4">
           <p>{cursor.wpm}</p>
         </div>
         <div
-          className="border-l border-border text-foreground-light pl-4 cursor-pointer"
+          className="border-border text-foreground-light cursor-pointer border-l pl-4"
           onClick={onDelete}
         >
-          <Close className="w-4 h-4" />
+          <Close className="h-4 w-4" />
         </div>
       </div>
     </div>
@@ -44,17 +44,17 @@ const NewCursorInput: React.FC<{
   onChange: (cursor: NewCursor) => void;
   onAdd: () => void;
 }> = ({ newCursor, onChange, onAdd }) => (
-  <div className="flex gap-2 items-center shadow-[inset_0_0_0_1px] shadow-transparent hover:shadow-border rounded-xl">
-    <div className="flex-1 flex justify-between border-b border-border py-4 mx-4">
+  <div className="hover:shadow-border flex items-center gap-2 rounded-xl shadow-[inset_0_0_0_1px] shadow-transparent">
+    <div className="border-border mx-4 flex flex-1 justify-between border-b py-4">
       <Input
         type="text"
-        className="h-auto py-0 w-full bg-transparent border-0 shadow-none focus-visible:ring-0 rounded-none pr-4"
+        className="h-auto w-full rounded-none border-0 bg-transparent py-0 pr-4 shadow-none focus-visible:ring-0"
         placeholder="Enter the cursor name"
         value={newCursor.name}
         onChange={(e) => onChange({ ...newCursor, name: e.target.value })}
       />
-      <div className="flex gap-4 items-center">
-        <div className="border-l border-r border-border px-4">
+      <div className="flex items-center gap-4">
+        <div className="border-border border-r border-l px-4">
           <Input
             type="number"
             min={1}
@@ -63,15 +63,15 @@ const NewCursorInput: React.FC<{
             onChange={(e) =>
               onChange({ ...newCursor, wpm: Number(e.target.value) })
             }
-            className="w-10 h-auto p-0 bg-transparent border-0 shadow-none focus-visible:ring-0 rounded-none"
+            className="h-auto w-10 rounded-none border-0 bg-transparent p-0 shadow-none focus-visible:ring-0"
             placeholder="WPM"
           />
         </div>
         <div
-          className="self-center rotate-45 text-foreground-light cursor-pointer"
+          className="text-foreground-light rotate-45 cursor-pointer self-center"
           onClick={onAdd}
         >
-          <Close className="w-4 h-4" />
+          <Close className="h-4 w-4" />
         </div>
       </div>
     </div>
@@ -85,10 +85,7 @@ export const ChaseCursor: React.FC = () => {
 
   const handleAddCursor = () => {
     if (newCursor.name && newCursor.wpm > 0) {
-      setCursors([
-        ...cursors,
-        { ...newCursor, letterIndex: 0, wordIndex: 0 },
-      ]);
+      setCursors([...cursors, { ...newCursor, letterIndex: 0, wordIndex: 0 }]);
       setNewCursor({ name: "", wpm: 0 });
     }
   };

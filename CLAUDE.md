@@ -52,15 +52,15 @@ Local dev: run `npm run dev` (Next.js) + `npm run worker:dev` (wrangler) simulta
 
 ### WebSocket message protocol
 
-| Message | Direction | Payload |
-|---|---|---|
-| `join` | client → server | `{ playerId, username }` |
-| `start` | client → server | `{}` (host only) |
-| `progress` | client → server | `{ charIndex }` (throttled ~150 ms) |
-| `status` | server → all | `{ status, players[], creatorId, text? }` |
-| `leaderboard` | server → all | `[{ playerId, username, charIndex, wpm }]` (Phase 3+) |
-| `finished` | server → all | `[{ playerId, username, wpm, accuracy, rank }]` (Phase 4+) |
-| `error` | server → one | `{ message }` |
+| Message       | Direction       | Payload                                                    |
+| ------------- | --------------- | ---------------------------------------------------------- |
+| `join`        | client → server | `{ playerId, username }`                                   |
+| `start`       | client → server | `{}` (host only)                                           |
+| `progress`    | client → server | `{ charIndex }` (throttled ~150 ms)                        |
+| `status`      | server → all    | `{ status, players[], creatorId, text? }`                  |
+| `leaderboard` | server → all    | `[{ playerId, username, charIndex, wpm }]` (Phase 3+)      |
+| `finished`    | server → all    | `[{ playerId, username, wpm, accuracy, rank }]` (Phase 4+) |
+| `error`       | server → one    | `{ message }`                                              |
 
 ### Player identity (anonymous)
 
@@ -148,16 +148,19 @@ const letterHeight = useTypingStore((s) => s.letterHeight);
 **TypingStore** (`src/lib/stores/typing-store.ts`):
 
 Word/keystroke state:
+
 - `wordArr`, `correctWordArr`, `wordIndex`, `letterIndex`
 - `testStarted`, `testPaused`, `testEnded`, `resetTrigger`
 - `cursors: GhostCursor[]` — `{ name, wordIndex, letterIndex, wpm }`
 
 Layout geometry (merged from the old paragraph-store):
+
 - `letterHeight`, `letterWidth` — pixel dimensions of a single `text-pa` character
 - `level`, `levelFromTop` — current scroll row
 - `currentWordPosition: { top, left }` — position relative to the paragraph container
 
 Actions:
+
 - `initWords(words?)` — populates `wordArr`/`correctWordArr`
 - `setWordIndex`, `setLetterIndex`, `setWordProp`
 - `startTest()`, `pauseTest()`, `endTest()`, `resetTestFlags()`, `toggleResetTrigger()`
@@ -202,18 +205,20 @@ Callbacks the consumer can pass in:
 `globals.css` uses `@import "tailwindcss"` (v4 syntax — no `tailwind.config.js`). All design tokens are declared in `@theme inline { ... }` and consumed as CSS variables. There is no separate config file.
 
 Custom tokens:
-| Token | Value / Usage |
-|---|---|
-| `--spacing-pa: 0.8rem` | Maps to `gap-y-pa` (row gap between lines) |
-| `text-pa` | `font-size: 2rem; line-height: 2rem` — typing area text size |
-| `--color-foreground-light` | Untyped letter color |
-| `--color-foreground-light-1` | Slightly lighter muted text |
-| `--color-destructive` / `--color-destructive-light` | Hard error / soft error colors |
-| `--color-ghost-cursor` | Ghost cursor bar color |
-| `--color-transparent-dark` | Blurred overlay |
-| `--breakpoint-xs: 480px` | Extra-small responsive breakpoint |
+
+| Token                                               | Value / Usage                                                |
+| --------------------------------------------------- | ------------------------------------------------------------ |
+| `--spacing-pa: 0.8rem`                              | Maps to `gap-y-pa` (row gap between lines)                   |
+| `text-pa`                                           | `font-size: 2rem; line-height: 2rem` — typing area text size |
+| `--color-foreground-light`                          | Untyped letter color                                         |
+| `--color-foreground-light-1`                        | Slightly lighter muted text                                  |
+| `--color-destructive` / `--color-destructive-light` | Hard error / soft error colors                               |
+| `--color-ghost-cursor`                              | Ghost cursor bar color                                       |
+| `--color-transparent-dark`                          | Blurred overlay                                              |
+| `--breakpoint-xs: 480px`                            | Extra-small responsive breakpoint                            |
 
 Custom CSS utility classes in `@layer utilities`:
+
 - `.text-pa` — typing area font/line-height
 - `.word-error` — red underline on a completed word that had errors
 - `.soft-error` — `color: var(--destructive-light)` on a letter
@@ -223,6 +228,7 @@ Custom CSS utility classes in `@layer utilities`:
 ## Letter error states (`TypingLetter.tsx`)
 
 `error` prop is `undefined | 0 | 1 | 2`:
+
 - `undefined` — not typed yet → `text-foreground-light`
 - `0` — typed correctly → `text-foreground`
 - `1` — soft error (over-typed beyond word length) → `.soft-error`
@@ -235,9 +241,11 @@ Currently only the default `dark` theme is active. `ThemeManager` is a thin wrap
 ## Key math
 
 The typing area shows exactly **3 lines** at once. Container height:
+
 ```
 height = letterHeight * 3 + gap * letterHeight * 2 + letterHeight * 0.25
 ```
+
 where `gap = 2/5` from `src/lib/constants.ts` (0.8rem gap / 2rem line-height).
 
 `ChangeLevelOfTypingParagraph` computes `level` from the current word's `top` relative to the paragraph container, then `ParagraphDisplay` translates the Framer Motion `y` by `-level * letterHeight * (1 + gap)`.
@@ -249,6 +257,7 @@ where `gap = 2/5` from `src/lib/constants.ts` (0.8rem gap / 2rem line-height).
 ## Typography component
 
 Always use `src/components/ui/typography.tsx` for text — never raw `<h1>/<p>/<small>`:
+
 ```tsx
 import { H1, H2, H3, P, Muted, Small } from "@/components/ui/typography";
 ```
@@ -259,6 +268,7 @@ import { H1, H2, H3, P, Muted, Small } from "@/components/ui/typography";
 import MyIcon from "@/images/myicon.svg";
 // Used as: <MyIcon className="w-4 h-4" />
 ```
+
 Handled by `@svgr/webpack` configured in `next.config.mjs`.
 
 ## `getWordsToType`
@@ -267,6 +277,7 @@ Handled by `@svgr/webpack` configured in `next.config.mjs`.
 import { getWordsToType } from "@/actions/getWordsToType";
 const words = getWordsToType(1, 50).trim().split(" ");
 ```
+
 This is a **regular client-callable function**, not a Next.js server action (no `"use server"`). It slices a random window of `numberOfWords` from the chosen JSON word list.
 
 ## Adding new word lists
