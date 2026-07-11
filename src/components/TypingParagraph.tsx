@@ -111,19 +111,10 @@ const TypingParagraph = ({
               <H3 className="text-foreground">{wordIndex}</H3>
               <H3 className="text-foreground-light"> / {totalWords}</H3>
             </div>
-            <div
-              className="relative overflow-hidden select-none"
-              style={{
-                height: `${letterHeight * 3 + gap * letterHeight * 2 + letterHeight * 0.25}px`,
-              }}
-              onMouseDown={(e) => {
-                e.preventDefault();
-                handleFocus();
-              }}
-            >
+            <div className="relative">
               {showOverlay && (
                 <div
-                  className="absolute z-20 grid h-full w-full cursor-pointer place-items-center rounded-lg backdrop-blur-sm"
+                  className="absolute inset-5 z-20 -m-10 grid cursor-pointer place-items-center rounded-lg backdrop-blur-sm"
                   onClick={handleFocus}
                 >
                   <Muted className="flex items-center gap-2">
@@ -131,20 +122,31 @@ const TypingParagraph = ({
                   </Muted>
                 </div>
               )}
-              <div className="relative flex w-full">
-                <ParagraphDisplay
-                  typingParagraphRef={typingParagraphRef}
-                  cursorRef={cursorRef}
-                  currentWordRef={currentWordRef}
-                  showCursor={inputIsFocused}
+              <div
+                className="relative overflow-hidden select-none"
+                style={{
+                  height: `${letterHeight * 3 + gap * letterHeight * 2 + letterHeight * 0.25}px`,
+                }}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  handleFocus();
+                }}
+              >
+                <div className="relative flex w-full">
+                  <ParagraphDisplay
+                    typingParagraphRef={typingParagraphRef}
+                    cursorRef={cursorRef}
+                    currentWordRef={currentWordRef}
+                    showCursor={inputIsFocused}
+                  />
+                </div>
+                <TypingParagraphInputBox
+                  inputRef={inputRef}
+                  inputHandlers={inputHandlers}
+                  isModalOpen={isModalOpen}
+                  testEnded={testEnded}
                 />
               </div>
-              <TypingParagraphInputBox
-                inputRef={inputRef}
-                inputHandlers={inputHandlers}
-                isModalOpen={isModalOpen}
-                testEnded={testEnded}
-              />
             </div>
           </>
         </>

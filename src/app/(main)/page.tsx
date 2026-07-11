@@ -7,6 +7,7 @@ import { useTypingStore } from "@/lib/store-provider";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useMemo, useState } from "react";
 import RestartButton from "@/components/RestartButton";
+import { Button } from "@/components/ui/button";
 
 async function createRoom(): Promise<string> {
   const workerUrl =
@@ -56,15 +57,15 @@ export default function Page() {
               setTimeout(() => setShowFinishTest(true), 1000);
             }}
           />
-          <RestartButton />
-          <div className="mt-6 flex justify-end">
-            <button
+          <div className="mt-8 flex items-center justify-center gap-4">
+            <RestartButton />
+            <Button
               onClick={handleCreateRoom}
               disabled={creatingRoom}
-              className="text-muted-foreground hover:text-foreground text-sm transition-colors disabled:opacity-50"
+              variant={"primary"}
             >
               {creatingRoom ? "Creating room…" : "Multiplayer race →"}
-            </button>
+            </Button>
           </div>
         </>
       ) : (
