@@ -1,4 +1,5 @@
 import { MongoClient } from "mongodb";
+import { raceResultsCollection } from "./models";
 import type {
   ClientMessage,
   Env,
@@ -139,7 +140,10 @@ export class RoomObject implements DurableObject {
   private handleStart(socket: WebSocket): void {
     const playerId = this.socketToPlayer.get(socket);
     if (playerId !== this.creatorId) {
-      this.send(socket, { type: "error", message: "Only the host can start the race." });
+      this.send(socket, {
+        type: "error",
+        message: "Only the host can start the race.",
+      });
       return;
     }
     if (this.status !== "lobby") {
@@ -148,7 +152,7 @@ export class RoomObject implements DurableObject {
     }
 
     const passage = PASSAGES[Math.floor(Math.random() * PASSAGES.length)];
-    this.words = passage.split(" ");
+    this.words = passage.split(" ").slice(0, 10);
     this.status = "countdown";
 
     this.broadcast({
@@ -201,7 +205,7 @@ export class RoomObject implements DurableObject {
     const charIndex = this.charCount(wordIndex, letterIndex);
     const elapsedMs = Date.now() - this.startTime;
     if (charIndex > 0 && elapsedMs > 0) {
-      player.wpm = Math.round((charIndex / 5) / (elapsedMs / 60000));
+      player.wpm = Math.round(charIndex / 5 / (elapsedMs / 60000));
     }
 
     // Player finished when cursor moves past the last word
@@ -267,8 +271,8 @@ export class RoomObject implements DurableObject {
     const client = new MongoClient(uri);
     try {
       await client.connect();
-      const db = client.db("keyblitz");
-      await db.collection("race_results").insertOne({
+      // Database comes from the URI path (e.g. .../keyblitz-v3?...) — no hard-coding needed
+      await raceResultsCollection(client).insertOne({
         roomCode: this.roomCode,
         textPassage: this.words.join(" "),
         startedAt: this.startTime ? new Date(this.startTime) : new Date(),
@@ -282,7 +286,7 @@ export class RoomObject implements DurableObject {
           finishedAt: r.finishedAt ? new Date(r.finishedAt) : null,
         })),
       });
-      console.log(`[RoomObject] Persisted race results for room ${this.roomCode}`);
+      console.log(`[RoomObject] Persisted results for room ${this.roomCode}`);
     } finally {
       await client.close();
     }
