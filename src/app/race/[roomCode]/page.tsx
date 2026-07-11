@@ -3,11 +3,13 @@
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { useRaceSocket } from "@/hooks/useRaceSocket";
+import { useTypingStore } from "@/lib/store-provider";
 import RaceLobby from "@/components/RaceLobby";
 import Countdown from "@/components/Countdown";
+import TypingParagraph from "@/components/TypingParagraph";
 import { Button } from "@/components/ui/button";
 import { Muted } from "@/components/ui/typography";
-import type { FinalResult } from "@/types/race";
+import type { FinalResult, LeaderboardEntry } from "@/types/race";
 
 const PLAYER_ID_KEY = "kb_playerId";
 const USERNAME_KEY = "kb_username";
@@ -34,15 +36,55 @@ function RaceRoom({
   const router = useRouter();
   const [results, setResults] = useState<FinalResult[] | null>(null);
 
-  const handleFinished = useCallback((r: FinalResult[]) => setResults(r), []);
+  const setCursors = useTypingStore((s) => s.setCursors);
 
-  const { status, players, text, creatorId, isConnected, startRace } =
+  const handleFinished = useCallback((r: FinalResult[]) => {
+    setResults(r);
+  }, []);
+
+  const handleLeaderboard = useCallback(
+    (entries: LeaderboardEntry[]) => {
+      const newCursors = entries
+        .filter((e) => e.playerId !== playerId)
+        .map((e) => ({
+          name: e.username,
+          wordIndex: e.wordIndex,
+          letterIndex: e.letterIndex,
+          wpm: e.wpm,
+        }));
+      setCursors(newCursors);
+    },
+    [playerId, setCursors],
+  );
+
+  const { status, players, words, creatorId, isConnected, startRace, sendProgress } =
     useRaceSocket({
       roomCode,
       playerId,
       username,
       onFinished: handleFinished,
+      onLeaderboard: handleLeaderboard,
     });
+
+  // When the race starts, clear any leftover cursors from solo mode so that
+  // GhostCursor's WPM-based animation doesn't start before server positions arrive.
+  useEffect(() => {
+    if (status === "racing") {
+      setCursors([]);
+    }
+  }, [status, setCursors]);
+
+  // Clear cursors when the race room unmounts
+  useEffect(() => {
+    return () => setCursors([]);
+  }, [setCursors]);
+
+  const handleCursorMove = useCallback(
+    (wordIndex: number, letterIndex: number) => {
+      sendProgress(wordIndex, letterIndex);
+    },
+    [sendProgress],
+  );
 
   if (!isConnected) {
     return <Muted>Connecting…</Muted>;
@@ -59,16 +101,18 @@ function RaceRoom({
                 #{r.rank}
               </span>
               <span className="flex-1 text-foreground">{r.username}</span>
-              <span className="tabular-nums text-foreground">
-                {r.wpm} WPM
-              </span>
+              <span className="tabular-nums text-foreground">{r.wpm} WPM</span>
               <span className="tabular-nums text-muted-foreground">
                 {Math.round(r.accuracy)}%
               </span>
             </li>
           ))}
         </ol>
-        <Button variant="default" className="self-start" onClick={() => router.push("/")}>
+        <Button
+          variant="default"
+          className="self-start"
+          onClick={() => router.push("/")}
+        >
           Back to home
         </Button>
       </div>
@@ -91,16 +135,19 @@ function RaceRoom({
     return <Countdown seconds={5} />;
   }
 
-  // status === "racing" — TypingParagraph wired in Phase 2
+  // status === "racing"
+  if (words.length === 0) {
+    return <Muted>Loading passage…</Muted>;
+  }
+
   return (
-    <div className="flex flex-col gap-6">
-      <Muted>Race in progress — full typing UI coming in Phase 2.</Muted>
-      <p className="text-foreground leading-relaxed">{text}</p>
-    </div>
+    <TypingParagraph
+      words={words}
+      onCursorMove={handleCursorMove}
+    />
   );
 }
 
-// Username prompt shown on first visit
 function UsernamePrompt({ onSet }: { onSet: (username: string) => void }) {
   const [value, setValue] = useState("");
 
@@ -139,7 +186,6 @@ export default function RacePage() {
   const [username, setUsername] = useState("");
   const [ready, setReady] = useState(false);
 
-  // Load stored identity on first render (client-only)
   useEffect(() => {
     const pid = getOrCreatePlayerId();
     const stored = localStorage.getItem(USERNAME_KEY);
@@ -161,5 +207,7 @@ export default function RacePage() {
     );
   }
 
-  return <RaceRoom roomCode={roomCode} playerId={playerId} username={username} />;
+  return (
+    <RaceRoom roomCode={roomCode} playerId={playerId} username={username} />
+  );
 }

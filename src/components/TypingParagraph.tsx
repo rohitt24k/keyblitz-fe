@@ -20,6 +20,7 @@ interface TypingParagraphProps {
     correctChars: number,
     totalChars: number,
   ) => void;
+  onCursorMove?: (wordIndex: number, letterIndex: number) => void;
   onTestStart?: () => void;
   onTestEnd?: (results: ITestProp) => void;
   onTestPause?: () => void;
@@ -30,6 +31,7 @@ const TypingParagraph = ({
   words,
   onKeyPress,
   onWordComplete,
+  onCursorMove,
   onTestStart,
   onTestEnd,
   onTestPause,
@@ -52,6 +54,7 @@ const TypingParagraph = ({
     words,
     onKeyPress,
     onWordComplete,
+    onCursorMove,
     onTestStart,
     onTestEnd,
     onTestPause,

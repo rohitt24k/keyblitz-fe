@@ -25,7 +25,7 @@ interface UseRaceSocketOptions {
 interface RaceSocketState {
   status: RaceStatus;
   players: PlayerSnapshot[];
-  text: string;
+  words: string[];
   creatorId: string | null;
   isConnected: boolean;
 }
@@ -38,14 +38,14 @@ export function useRaceSocket({
   onFinished,
 }: UseRaceSocketOptions) {
   const wsRef = useRef<WebSocket | null>(null);
-  // Throttle: hold the latest charIndex and flush on a 150ms timer
+  // Throttle: hold the latest position and flush on a 150ms timer
   const throttleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const pendingCharIndexRef = useRef<number | null>(null);
+  const pendingProgressRef = useRef<{ wordIndex: number; letterIndex: number } | null>(null);
 
   const [state, setState] = useState<RaceSocketState>({
     status: "lobby",
     players: [],
-    text: "",
+    words: [],
     creatorId: null,
     isConnected: false,
   });
@@ -58,13 +58,13 @@ export function useRaceSocket({
 
   // Throttled send: at most one progress message per 150 ms
   const sendProgress = useCallback(
-    (charIndex: number) => {
-      pendingCharIndexRef.current = charIndex;
+    (wordIndex: number, letterIndex: number) => {
+      pendingProgressRef.current = { wordIndex, letterIndex };
       if (throttleTimerRef.current !== null) return;
       throttleTimerRef.current = setTimeout(() => {
-        if (pendingCharIndexRef.current !== null) {
-          send({ type: "progress", charIndex: pendingCharIndexRef.current });
-          pendingCharIndexRef.current = null;
+        if (pendingProgressRef.current !== null) {
+          send({ type: "progress", ...pendingProgressRef.current });
+          pendingProgressRef.current = null;
         }
         throttleTimerRef.current = null;
       }, 150);
@@ -101,7 +101,7 @@ export function useRaceSocket({
               status: msg.status,
               players: msg.players,
               creatorId: msg.creatorId,
-              text: msg.text ?? s.text,
+              words: msg.words ?? s.words,
             }));
             break;
           case "leaderboard":
@@ -127,6 +127,7 @@ export function useRaceSocket({
       if (throttleTimerRef.current !== null) {
         clearTimeout(throttleTimerRef.current);
         throttleTimerRef.current = null;
+        pendingProgressRef.current = null;
       }
     };
   }, [roomCode, playerId, username, onLeaderboard, onFinished]);

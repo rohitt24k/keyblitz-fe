@@ -1,4 +1,4 @@
-// These mirror worker/types.ts exactly — keep in sync when adding new message types.
+// These mirror worker/types.ts exactly — keep both in sync when adding message types.
 
 export type RaceStatus = "lobby" | "countdown" | "racing" | "finished";
 
@@ -11,7 +11,8 @@ export interface PlayerSnapshot {
 export interface LeaderboardEntry {
   playerId: string;
   username: string;
-  charIndex: number;
+  wordIndex: number;
+  letterIndex: number;
   wpm: number;
   isFinished: boolean;
 }
@@ -20,7 +21,7 @@ export interface FinalResult {
   playerId: string;
   username: string;
   wpm: number;
-  accuracy: number;
+  accuracy: number; // placeholder — full char validation comes in a later phase
   rank: number;
   finishedAt: number | null;
 }
@@ -29,7 +30,7 @@ export interface FinalResult {
 export type ClientMessage =
   | { type: "join"; playerId: string; username: string }
   | { type: "start" }
-  | { type: "progress"; charIndex: number };
+  | { type: "progress"; wordIndex: number; letterIndex: number };
 
 // Server → Client
 export type ServerMessage =
@@ -38,7 +39,7 @@ export type ServerMessage =
       status: RaceStatus;
       players: PlayerSnapshot[];
       creatorId: string | null;
-      text?: string;
+      words?: string[]; // sent when status transitions to "racing"
     }
   | { type: "leaderboard"; players: LeaderboardEntry[] }
   | { type: "finished"; results: FinalResult[] }

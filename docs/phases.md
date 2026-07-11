@@ -6,7 +6,7 @@ Status legend: 🔄 In progress · ✅ Complete · ❌ Blocked · ⏳ Pending
 
 ## Phase 1 — Cloudflare Setup + Room Lifecycle
 **Status**: ✅ Complete  
-**Date**: 2026-07-11  
+**Completed**: 2026-07-11  
 **Validates**: F1, F2, F3
 
 ### What was built
@@ -30,36 +30,72 @@ _(fill in during testing)_
 ---
 
 ## Phase 2 — Server-authoritative Typing Validation
-**Status**: ⏳ Pending  
+**Status**: ✅ Complete  
+**Completed**: 2026-07-11  
 **Validates**: F5
 
-### Planned
-- `progress { charIndex }` handler in `RoomObject`
-- Validate charIndex range, compute WPM server-side
-- Wire `onCursorMove` in `useTypingEngine` → `sendProgress` in `useRaceSocket`
-- Pass server text to `TypingParagraph` in the race page
+### What was built
+- `progress { charIndex }` handler in `RoomObject`: validates range (no backwards jumps, max = text.length), computes WPM server-side from elapsed time
+- Added `onCursorMove` prop to `TypingParagraph` and wired it through to `useTypingEngine`
+- Race page: renders `TypingParagraph` when `status === "racing"`, converts `(wordIndex, letterIndex)` → absolute `charIndex` and calls `sendProgress`
+
+### Test checklist
+- [ ] Start race, type a few characters → progress messages sent in devtools Network tab (max 1 per 150ms)
+- [ ] Inspect worker logs: WPM computed and charIndex updated per player
+- [ ] Send forged `progress { charIndex: 9999 }` via WS test client → server ignores it (charIndex stays at previous value)
+- [ ] Complete the full passage → `onTestEnd` fires locally; server receives final `progress { charIndex: text.length }`
+
+### Bugs found / Deviations
+_(fill in during testing)_
 
 ---
 
 ## Phase 3 — Leaderboard Broadcast
-**Status**: ⏳ Pending  
+**Status**: ✅ Complete  
+**Completed**: 2026-07-11  
 **Validates**: F4, F6, N1, N2
 
-### Planned
-- 300 ms leaderboard tick in DO (sort by charIndex, top-5 + own)
-- Map server charIndex → `{wordIndex, letterIndex}` in hook
-- Call `setCursors()` on Zustand store → existing ghost cursor UI renders opponents
+### What was built
+- `worker/room.ts`: 300ms `setInterval` leaderboard tick starts when racing begins. Sorts all players by `charIndex` desc, takes top-5, sends each player top-5 + their own entry if outside top-5.
+- `src/app/race/[roomCode]/page.tsx`:
+  - `charIndexToPosition(words, charIndex)` — inverse of `computeCharIndex`, maps server charIndex → `{wordIndex, letterIndex}`
+  - `handleLeaderboard` callback: filters out current player, maps opponents to `GhostCursor[]`, calls `setCursors()`
+  - On `status === "racing"`, calls `setCursors([])` to clear solo-mode cursors before GhostCursor's WPM animation can start (ensuring server positions drive display, not local animation)
+  - `wordsRef` keeps passage words stable without recreating the WebSocket on each render
+- The existing `ShowWordWithCursor` + Framer Motion animation smoothly interpolates cursors between 300ms server ticks
+
+### Test checklist
+- [ ] Open race in 2 tabs, start race, both type → each tab sees the other player's cursor bar moving in real time
+- [ ] Faster typist's cursor is further ahead on the passage
+- [ ] Network tab WS frames show `leaderboard` messages arriving every ~300ms
+- [ ] Payload size stays constant regardless of how many players (top-5 cap)
+
+### Bugs found / Deviations
+_(fill in during testing)_
 
 ---
 
 ## Phase 4 — Race Finish + Results Screen
-**Status**: ⏳ Pending  
+**Status**: ✅ Complete  
+**Completed**: 2026-07-11  
 **Validates**: F7
 
-### Planned
-- Track `finishedAt` in DO, detect all-finished or 5-min timeout
-- Compute final ranks, broadcast `finished`
-- Full `RaceResults` component (replace placeholder)
+### What was built
+- `worker/room.ts`: `finishedAt` tracked per-player; `checkRaceFinished()` detects all-done; `broadcastFinished()` ranks by finishedAt and broadcasts `{ type: "finished", results }`
+- `src/app/race/[roomCode]/page.tsx`: `handleFinished` callback stores results in state; inline results screen shows rank, username, WPM, accuracy + "Back to home" button
+
+### Protocol changes (also shipped in this phase)
+- `progress` message changed from `{ charIndex }` → `{ wordIndex, letterIndex }` — no charIndex on the wire
+- `status` message changed from `text: string` → `words: string[]` — passage delivered as an array; no `split(" ")` on the frontend
+- `src/hooks/useRaceSocket.ts`: `sendProgress(wordIndex, letterIndex)`, `pendingProgressRef` stores `{ wordIndex, letterIndex }`; state has `words: string[]` instead of `text: string`
+- `src/app/race/[roomCode]/page.tsx`: removed `computeCharIndex`, `charIndexToPosition`, `wordsRef`; `handleLeaderboard` uses `e.wordIndex, e.letterIndex` directly; `handleCursorMove` passes `(wordIndex, letterIndex)` straight to `sendProgress`
+
+### Test checklist
+- [ ] Complete a race with 2+ players → all clients show the results screen with correct ranks
+- [ ] Finish mid-race with one player disconnected → remaining players still get the `finished` broadcast
+- [ ] "Back to home" button returns to `/`
+- [ ] Network WS frames show `{ type: "progress", wordIndex, letterIndex }` (no charIndex)
+- [ ] `status` racing message payload contains `words: string[]` array (not a `text` string)
 
 ---
 
