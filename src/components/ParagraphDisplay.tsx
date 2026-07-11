@@ -7,9 +7,9 @@ import ShowWordWithCursor from "./ShowWordWithCursor";
 import { gap } from "@/lib/constants";
 
 interface Props {
-  typingParagraphRef: React.RefObject<HTMLDivElement>;
-  cursorRef: React.RefObject<HTMLDivElement>;
-  currentWordRef: React.RefObject<HTMLDivElement>;
+  typingParagraphRef: React.RefObject<HTMLDivElement | null>;
+  cursorRef: React.RefObject<HTMLDivElement | null>;
+  currentWordRef: React.RefObject<HTMLDivElement | null>;
   showCursor: boolean;
 }
 

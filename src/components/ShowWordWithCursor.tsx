@@ -10,8 +10,8 @@ interface Props {
   wordProp: wordProp;
   index: number;
   wordIndex: number;
-  cursorRef: React.RefObject<HTMLDivElement>;
-  currentWordRef: React.RefObject<HTMLDivElement>;
+  cursorRef: React.RefObject<HTMLDivElement | null>;
+  currentWordRef: React.RefObject<HTMLDivElement | null>;
   letterIndex: number;
   isCurrent: boolean;
   showCursor: boolean;

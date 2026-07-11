@@ -25,7 +25,7 @@ export default function StoreProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const typingRef = useRef<TypingStoreApi>();
+  const typingRef = useRef<TypingStoreApi>(null);
 
   if (!typingRef.current) typingRef.current = createTypingStore();
 

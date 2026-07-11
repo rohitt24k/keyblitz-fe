@@ -1,5 +1,5 @@
 name = "keyblitz-worker"
-main = "worker/index.ts"
+main = "index.ts"
 compatibility_flags = ["nodejs_compat_v2"]
 compatibility_date = "2025-03-20"
 
@@ -9,7 +9,7 @@ class_name = "RoomObject"
 
 [[migrations]]
 tag = "v1"
-new_classes = ["RoomObject"]
+new_sqlite_classes = ["RoomObject"]
 
 [dev]
 port = 8787

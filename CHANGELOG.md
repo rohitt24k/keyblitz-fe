@@ -88,3 +88,26 @@ Format: `[Phase N] YYYY-MM-DD — description`
 - `worker/index.ts` — removed local `Env` interface; imports `Env` from `./types`
 - `worker/room.ts` — `env` typed as `Env` (was `object`)
 - `docs/phases.md` — updated Phases 1–4 with accurate what-was-built descriptions and deviations; fleshed out Phases 5–8 with detailed task lists
+
+---
+
+## [Post-Phase 6] 2026-07-12
+
+### Added
+- `worker/words.ts` — imports all 5 word-list JSON files (`src/utils/words-list/1–5.json`); `getPassage(count)` picks a random window of `count` words from the combined ~4000-word pool
+- `worker/tsconfig.json` — added `resolveJsonModule: true` and included JSON word-list paths
+
+### Changed
+- `worker/room.ts` — replaced hardcoded `PASSAGES` array with `getPassage(50)` in `handleStart`; every race now gets a unique 50-word passage drawn from the full word pool
+
+---
+
+## [Phase 6] 2026-07-11
+
+### Added
+- `worker/room.ts` — `isConnected: boolean` field on `Player`; reconnect logic in `handleJoin` (preserves all progress, restores socket, replays `finalResults` if race is over); `broadcastExcept()` helper to avoid echoing status back to the joining socket; `finalResults` cached on `RoomObject` for replaying to late reconnects
+- `src/app/race/[roomCode]/page.tsx` — "Race ended while you were away" screen for reconnect-after-finish edge case
+
+### Changed
+- `worker/room.ts` — `handleClose` split by status: lobby → full removal; racing/countdown/finished → mark `isConnected = false` (keep slot); `checkRaceFinished` treats disconnected players as done so remaining players aren't blocked; `broadcast` and `broadcastLeaderboard` skip disconnected players; `snapshots()` returns only connected players; removed `.slice(0, 10)` debug artifact that was limiting passages to 10 words
+- `src/app/race/[roomCode]/page.tsx` — `RacePage` now renders `null` while localStorage is being read (prevents flash of username prompt on reconnect)

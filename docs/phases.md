@@ -136,17 +136,39 @@ Status legend: 🔄 In progress · ✅ Complete · ❌ Blocked · ⏳ Pending
 ---
 
 ## Phase 6 — Reconnect Handling
-**Status**: ⏳ Pending  
+**Status**: ✅ Complete  
+**Completed**: 2026-07-11  
 **Validates**: F8
 
-### Planned tasks
-1. Client already stores `kb_playerId` in localStorage (done in Phase 1)
-2. Client on mount: load `kb_playerId` + `kb_username` from localStorage; skip username prompt if both exist
-3. `worker/room.ts` `handleJoin`: if `playerId` already in `players` map, reassign new WebSocket to existing slot, preserve all progress (`wordIndex`, `letterIndex`, `wpm`, `finishedAt`), send full current race state (including `words` array if status is `"racing"`)
+### What was built
+
+**Server (`worker/room.ts`)**:
+- `Player` interface: added `isConnected: boolean`
+- `handleJoin` reconnect path: when a `playerId` is already in the players map, replaces the socket and sets `isConnected = true`. All progress (`wordIndex`, `letterIndex`, `wpm`, `finishedAt`) is preserved. If the race is "racing", the leaderboard tick is restarted if it stopped. If the race has already "finished", the stored `finalResults` are replayed to the reconnecting socket.
+- `handleClose` split by status: in **lobby** → fully remove the player (old behaviour); during **countdown/racing/finished** → mark `isConnected = false` and keep the slot alive in the players map
+- `checkRaceFinished`: considers a player done if `finishedAt !== null` OR `!isConnected` — a disconnected player no longer blocks the race from ending
+- `broadcast` / `broadcastLeaderboard`: skip players where `isConnected = false`
+- `snapshots()`: returns only connected players (lobby list stays accurate)
+- `broadcastExcept(socket, msg)`: new helper to notify others on join/reconnect without echoing back to the joiner
+- Fixed: removed `.slice(0, 10)` debug artifact that was limiting passages to 10 words
+
+**Client (`src/app/race/[roomCode]/page.tsx`)**:
+- `loading` state: `RacePage` renders `null` while localStorage is being read, preventing a one-frame flash of the username prompt on page refresh when a stored username already exists
+- Reconnect-to-finished case: if `finalResults !== null` but `localFinished = false` (player reconnected after the race ended), shows a minimal results screen ("Race ended while you were away") with final ranks and a "Back to home" button — no local chart since local typing data is absent
+
+### How reconnect works end-to-end
+1. Player refreshes the page mid-race
+2. `RacePage` reads `kb_playerId` + `kb_username` from localStorage, skips the username prompt
+3. `useRaceSocket` opens a new WebSocket and sends `join { playerId, username }`
+4. DO `handleJoin` finds the existing player slot, replaces socket, sends `status: "racing"` with `words` + leaderboard resumes within 300ms
+5. Player's cursor on other screens was frozen at their last position during the disconnect; once they resume typing past that position, the cursor continues moving
 
 ### Test checklist
-- [ ] Join a race, start typing, refresh page → same player slot, progress preserved, not duplicated in player list
-- [ ] Reconnect during countdown → player sees countdown immediately
+- [ ] Join a race, type a few words, refresh page → username prompt is skipped, race resumes immediately
+- [ ] Player is not duplicated in the player list on reconnect
+- [ ] Other players see the reconnecting player's cursor frozen then resume once they catch up
+- [ ] Disconnect one player mid-race → others can still finish the race (not stuck waiting)
+- [ ] Reconnect after race is finished → "Race ended while you were away" screen with final results
 
 ---
 

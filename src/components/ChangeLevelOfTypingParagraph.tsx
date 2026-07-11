@@ -6,7 +6,7 @@ import React, { useCallback, useEffect } from "react";
 
 interface Props {
   children: React.ReactNode;
-  currentWordRef: React.RefObject<HTMLDivElement>;
+  currentWordRef: React.RefObject<HTMLDivElement | null>;
 }
 
 function debounce<T extends (...args: unknown[]) => void>(

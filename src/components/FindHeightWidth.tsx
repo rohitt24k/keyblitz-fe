@@ -8,7 +8,7 @@ interface Props {
 }
 
 function measureLetterDimensions(
-  divRef: React.RefObject<HTMLDivElement>,
+  divRef: React.RefObject<HTMLDivElement | null>,
 ): Promise<{ height: number; width: number }> {
   return document.fonts.ready.then(() => {
     const divElem = document.createElement("div");

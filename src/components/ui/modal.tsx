@@ -22,7 +22,7 @@ interface ModalOptionsProps {
 
 interface ModalHeaderProps {
   heading: string | null;
-  inputRef: React.RefObject<HTMLInputElement>;
+  inputRef: React.RefObject<HTMLInputElement | null>;
 }
 
 const ModalOptions: React.FC<ModalOptionsProps> = ({
@@ -102,12 +102,15 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
     (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     },
-    [onClose]
+    [onClose],
   );
 
   const resetModalContent = useCallback(() => {
     setModalContent(
-      <ModalOptions setContent={setModalContent} setHeading={setModalHeading} />
+      <ModalOptions
+        setContent={setModalContent}
+        setHeading={setModalHeading}
+      />,
     );
     setModalHeading(null);
   }, []);

@@ -208,6 +208,44 @@ function RaceRoom({
     );
   }
 
+  // ── Reconnected to a race that already ended ────────────────────────────────
+  // finalResults arrive if the server replays them to a reconnecting player.
+  // localFinished is false because this player never finished in this session.
+  if (!localFinished && finalResults !== null) {
+    const sorted = [...finalResults].sort((a, b) => a.rank - b.rank);
+    return (
+      <div className="flex flex-col gap-6">
+        <H2>Race Results</H2>
+        <Muted>This race ended while you were away.</Muted>
+        <div className="flex flex-col gap-2">
+          {sorted.map((r) => (
+            <div key={r.playerId} className="flex items-center gap-2">
+              <span className="text-muted-foreground w-6 text-sm tabular-nums shrink-0">
+                #{r.rank}
+              </span>
+              <span className="flex-1 text-sm">
+                {r.username}
+                {r.playerId === playerId && (
+                  <span className="text-muted-foreground"> (you)</span>
+                )}
+              </span>
+              <span className="tabular-nums text-sm font-medium shrink-0">
+                {r.wpm} wpm
+              </span>
+            </div>
+          ))}
+        </div>
+        <Button
+          variant="default"
+          className="self-start"
+          onClick={() => router.push("/")}
+        >
+          Back to home
+        </Button>
+      </div>
+    );
+  }
+
   // ── Pre-finish screens ───────────────────────────────────────────────────────
 
   if (!isConnected) {
@@ -281,6 +319,7 @@ export default function RacePage() {
   const [playerId, setPlayerId] = useState("");
   const [username, setUsername] = useState("");
   const [ready, setReady] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const pid = getOrCreatePlayerId();
@@ -290,7 +329,12 @@ export default function RacePage() {
       setUsername(stored);
       setReady(true);
     }
+    setLoading(false);
   }, []);
+
+  // Don't render until localStorage is read — prevents a flash of UsernamePrompt
+  // on page refresh when a stored username already exists
+  if (loading) return null;
 
   if (!ready || !playerId) {
     return (

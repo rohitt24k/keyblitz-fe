@@ -8,8 +8,9 @@
     "strict": true,
     "noEmit": true,
     "skipLibCheck": true,
-    "allowImportingTsExtensions": false
+    "allowImportingTsExtensions": false,
+    "resolveJsonModule": true
   },
-  "include": ["*.ts"],
+  "include": ["*.ts", "../src/utils/words-list/*.json"],
   "exclude": ["node_modules"]
 }

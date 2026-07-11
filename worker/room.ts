@@ -1,5 +1,6 @@
 import { MongoClient } from "mongodb";
 import { raceResultsCollection } from "./models";
+import { getPassage } from "./words";
 import type {
   ClientMessage,
   Env,
@@ -14,19 +15,12 @@ interface Player {
   playerId: string;
   username: string;
   socket: WebSocket;
+  isConnected: boolean;
   wordIndex: number;
   letterIndex: number;
   wpm: number;
   finishedAt: number | null;
 }
-
-const PASSAGES = [
-  "the quick brown fox jumps over the lazy dog and then sat down to rest in the shade of a large oak tree waiting for the sun to set",
-  "to be or not to be that is the question whether tis nobler in the mind to suffer the slings and arrows of outrageous fortune or to take arms against a sea of troubles",
-  "all the world is a stage and all the men and women merely players they have their exits and their entrances and one man in his time plays many parts",
-  "it was the best of times it was the worst of times it was the age of wisdom it was the age of foolishness it was the epoch of belief it was the epoch of incredulity",
-  "two roads diverged in a yellow wood and sorry i could not travel both and be one traveler long i stood and looked down one as far as i could to where it bent in the undergrowth",
-];
 
 const TOP_N = 5;
 const LEADERBOARD_INTERVAL_MS = 300;
@@ -42,6 +36,8 @@ export class RoomObject implements DurableObject {
   private endTime: number | null = null;
   private roomCode: string | null = null;
   private leaderboardTimer: ReturnType<typeof setInterval> | null = null;
+  // Stored so a reconnecting player can receive results after the race ends
+  private finalResults: FinalResult[] | null = null;
 
   constructor(
     private readonly state: DurableObjectState,
@@ -49,7 +45,6 @@ export class RoomObject implements DurableObject {
   ) {}
 
   async fetch(request: Request): Promise<Response> {
-    // Capture room code from URL on first connection
     if (!this.roomCode) {
       const url = new URL(request.url);
       const match = url.pathname.match(/\/([^/]+)$/);
@@ -101,15 +96,22 @@ export class RoomObject implements DurableObject {
     const existing = this.players.get(playerId);
 
     if (existing) {
-      // Reconnect — replace socket, preserve progress
+      // Reconnect — restore socket and mark online, all progress is preserved
       this.socketToPlayer.delete(existing.socket);
       existing.socket = socket;
+      existing.isConnected = true;
+
+      // Resume leaderboard tick if it was stopped (e.g. all went idle)
+      if (this.status === "racing" && this.leaderboardTimer === null) {
+        this.startLeaderboardTick();
+      }
     } else {
       if (this.creatorId === null) this.creatorId = playerId;
       this.players.set(playerId, {
         playerId,
         username,
         socket,
+        isConnected: true,
         wordIndex: 0,
         letterIndex: 0,
         wpm: 0,
@@ -119,7 +121,7 @@ export class RoomObject implements DurableObject {
 
     this.socketToPlayer.set(socket, playerId);
 
-    // Send full room state to the joining player
+    // Send full room state to the joining/reconnecting player
     this.send(socket, {
       type: "status",
       status: this.status,
@@ -128,8 +130,13 @@ export class RoomObject implements DurableObject {
       ...(this.status === "racing" ? { words: this.words } : {}),
     });
 
-    // Notify all other players of the updated list
-    this.broadcast({
+    // If the race already finished, replay the results to the reconnecting player
+    if (this.status === "finished" && this.finalResults) {
+      this.send(socket, { type: "finished", results: this.finalResults });
+    }
+
+    // Notify all other connected players of the updated player list
+    this.broadcastExcept(socket, {
       type: "status",
       status: this.status,
       players: this.snapshots(),
@@ -151,8 +158,7 @@ export class RoomObject implements DurableObject {
       return;
     }
 
-    const passage = PASSAGES[Math.floor(Math.random() * PASSAGES.length)];
-    this.words = passage.split(" ").slice(0, 10);
+    this.words = getPassage(50);
     this.status = "countdown";
 
     this.broadcast({
@@ -189,33 +195,29 @@ export class RoomObject implements DurableObject {
     const player = this.players.get(playerId);
     if (!player || player.finishedAt !== null) return;
 
-    // Reject backwards movement
+    // Reject backwards movement — also acts as the catch-up guard after reconnect
     const isAhead =
       wordIndex > player.wordIndex ||
       (wordIndex === player.wordIndex && letterIndex > player.letterIndex);
     if (!isAhead) return;
 
-    // Reject out-of-bounds
     if (wordIndex > this.words.length) return;
 
     player.wordIndex = wordIndex;
     player.letterIndex = letterIndex;
 
-    // Compute WPM from absolute char position
     const charIndex = this.charCount(wordIndex, letterIndex);
     const elapsedMs = Date.now() - this.startTime;
     if (charIndex > 0 && elapsedMs > 0) {
-      player.wpm = Math.round(charIndex / 5 / (elapsedMs / 60000));
+      player.wpm = Math.round((charIndex / 5) / (elapsedMs / 60000));
     }
 
-    // Player finished when cursor moves past the last word
     if (wordIndex >= this.words.length && player.finishedAt === null) {
       player.finishedAt = Date.now();
       this.checkRaceFinished();
     }
   }
 
-  /** Absolute character position in the passage, used only for WPM math. */
   private charCount(wordIndex: number, letterIndex: number): number {
     const completed = this.words
       .slice(0, wordIndex)
@@ -225,8 +227,9 @@ export class RoomObject implements DurableObject {
   }
 
   private checkRaceFinished(): void {
+    // Race ends when every player has either finished or disconnected permanently
     const allDone = Array.from(this.players.values()).every(
-      (p) => p.finishedAt !== null,
+      (p) => p.finishedAt !== null || !p.isConnected,
     );
     if (!allDone) return;
 
@@ -245,15 +248,17 @@ export class RoomObject implements DurableObject {
       playerId: p.playerId,
       username: p.username,
       wpm: p.wpm,
-      accuracy: 100, // Phase 5+: track correct chars per keystroke
+      accuracy: 100, // placeholder — full char validation in a later phase
       rank: i + 1,
       finishedAt: p.finishedAt,
     }));
 
+    // Cache results so reconnecting players can receive them
+    this.finalResults = results;
+
     // Broadcast first — Mongo write must not block clients receiving results
     this.broadcast({ type: "finished", results });
 
-    // Fire-and-forget: keep the DO alive until the write completes
     this.state.waitUntil(
       this.persistResults(results).catch((err) =>
         console.error("[RoomObject] MongoDB write failed:", err),
@@ -271,7 +276,6 @@ export class RoomObject implements DurableObject {
     const client = new MongoClient(uri);
     try {
       await client.connect();
-      // Database comes from the URI path (e.g. .../keyblitz-v3?...) — no hard-coding needed
       await raceResultsCollection(client).insertOne({
         roomCode: this.roomCode,
         textPassage: this.words.join(" "),
@@ -281,7 +285,7 @@ export class RoomObject implements DurableObject {
           playerId: r.playerId,
           username: r.username,
           wpm: r.wpm,
-          accuracy: r.accuracy / 100, // store as ratio: 0.96 not 96
+          accuracy: r.accuracy / 100,
           rank: r.rank,
           finishedAt: r.finishedAt ? new Date(r.finishedAt) : null,
         })),
@@ -308,15 +312,18 @@ export class RoomObject implements DurableObject {
   }
 
   private broadcastLeaderboard(): void {
-    if (this.players.size === 0) return;
+    const connected = Array.from(this.players.values()).filter(
+      (p) => p.isConnected,
+    );
+    if (connected.length === 0) return;
 
-    const ranked = Array.from(this.players.values()).sort((a, b) => {
+    const ranked = [...this.players.values()].sort((a, b) => {
       if (b.wordIndex !== a.wordIndex) return b.wordIndex - a.wordIndex;
       return b.letterIndex - a.letterIndex;
     });
     const topN = ranked.slice(0, TOP_N);
 
-    for (const player of this.players.values()) {
+    for (const player of connected) {
       const inTopN = topN.some((p) => p.playerId === player.playerId);
       const entries = inTopN ? topN : [...topN, player];
 
@@ -338,32 +345,49 @@ export class RoomObject implements DurableObject {
     if (!playerId) return;
 
     this.socketToPlayer.delete(socket);
-    this.players.delete(playerId);
+    const player = this.players.get(playerId);
+    if (!player) return;
 
-    if (playerId === this.creatorId) {
-      const next = this.players.values().next().value;
-      this.creatorId = next ? next.playerId : null;
+    if (this.status === "lobby") {
+      // In the lobby: fully remove the player
+      this.players.delete(playerId);
+
+      if (playerId === this.creatorId) {
+        const next = Array.from(this.players.values()).find((p) => p.isConnected);
+        this.creatorId = next ? next.playerId : null;
+      }
+
+      if (this.players.size > 0) {
+        this.broadcast({
+          type: "status",
+          status: this.status,
+          players: this.snapshots(),
+          creatorId: this.creatorId,
+        });
+      }
+    } else {
+      // During a race: keep the slot alive for reconnect, just mark offline
+      player.isConnected = false;
+
+      if (playerId === this.creatorId) {
+        const next = Array.from(this.players.values()).find((p) => p.isConnected);
+        this.creatorId = next ? next.playerId : null;
+      }
+
+      // Disconnecting mid-race may unblock checkRaceFinished if others are done
+      if (this.status === "racing") this.checkRaceFinished();
     }
-
-    if (this.status === "lobby" && this.players.size > 0) {
-      this.broadcast({
-        type: "status",
-        status: this.status,
-        players: this.snapshots(),
-        creatorId: this.creatorId,
-      });
-    }
-
-    // If someone disconnected mid-race and everyone else is done, wrap up
-    if (this.status === "racing") this.checkRaceFinished();
   }
 
+  // Returns only connected players — used for the lobby list
   private snapshots(): PlayerSnapshot[] {
-    return Array.from(this.players.values()).map((p) => ({
-      playerId: p.playerId,
-      username: p.username,
-      isCreator: p.playerId === this.creatorId,
-    }));
+    return Array.from(this.players.values())
+      .filter((p) => p.isConnected)
+      .map((p) => ({
+        playerId: p.playerId,
+        username: p.username,
+        isCreator: p.playerId === this.creatorId,
+      }));
   }
 
   private send(socket: WebSocket, msg: ServerMessage): void {
@@ -374,9 +398,24 @@ export class RoomObject implements DurableObject {
     }
   }
 
+  // Send to all connected players
   private broadcast(msg: ServerMessage): void {
     const data = JSON.stringify(msg);
     for (const player of this.players.values()) {
+      if (!player.isConnected) continue;
+      try {
+        player.socket.send(data);
+      } catch {
+        // Skip closed sockets
+      }
+    }
+  }
+
+  // Send to all connected players except one (used after a join to avoid echo)
+  private broadcastExcept(exclude: WebSocket, msg: ServerMessage): void {
+    const data = JSON.stringify(msg);
+    for (const player of this.players.values()) {
+      if (!player.isConnected || player.socket === exclude) continue;
       try {
         player.socket.send(data);
       } catch {

@@ -29,9 +29,9 @@ interface UseTypingEngineOptions {
 }
 
 export interface UseTypingEngineReturn {
-  inputRef: React.RefObject<HTMLInputElement>;
-  currentWordRef: React.RefObject<HTMLDivElement>;
-  typingParagraphRef: React.RefObject<HTMLDivElement>;
+  inputRef: React.RefObject<HTMLInputElement | null>;
+  currentWordRef: React.RefObject<HTMLDivElement | null>;
+  typingParagraphRef: React.RefObject<HTMLDivElement | null>;
   inputIsFocused: boolean;
   focusInput: () => void;
   handleFocus: () => void;
