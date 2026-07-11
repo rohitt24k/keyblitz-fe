@@ -1,0 +1,7 @@
+# Wrangler local dev environment variables.
+# Copy this file to .dev.vars and fill in your values.
+# .dev.vars is gitignored — never commit it.
+#
+# To set secrets in production:  wrangler secret put MONGODB_URI
+
+MONGODB_URI="mongodb+srv://<username>:<password>@<cluster>.mongodb.net/?retryWrites=true&w=majority&appName=keyblitz"

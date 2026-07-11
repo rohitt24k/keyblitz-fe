@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import type { wordProp } from "@/types/word";
 import TypingLetter from "./TypingLetter";
 import { motion } from "framer-motion";
@@ -27,18 +27,8 @@ const ShowWordWithCursor = ({
   isCurrent,
   showCursor,
 }: Props) => {
-  const [ghostsLeftPos, setGhostsLeftPos] = useState<number[]>([]);
   const letterWidth = useTypingStore((s) => s.letterWidth);
   const cursors = useTypingStore((s) => s.cursors);
-
-  useEffect(() => {
-    const ghostPos = cursors.map((cursor) =>
-      cursor.wordIndex === index
-        ? cursor.letterIndex * letterWidth + cursor.letterIndex * (letterWidth / 5)
-        : 0,
-    );
-    setGhostsLeftPos(ghostPos);
-  }, [letterWidth, cursors, index]);
 
   return (
     <div
@@ -56,13 +46,16 @@ const ShowWordWithCursor = ({
         ))}
       </div>
 
-      {cursors.map((cursor, i) =>
+      {cursors.map((cursor) =>
         cursor.wordIndex === index ? (
           <motion.div
-            layoutId={`cursor-${i}`}
-            key={i}
-            initial={{ x: ghostsLeftPos[i] }}
-            animate={{ x: ghostsLeftPos[i] }}
+            layoutId={`cursor-${cursor.name}`}
+            key={cursor.name}
+            animate={{
+              x:
+                cursor.letterIndex * letterWidth +
+                cursor.letterIndex * (letterWidth / 5),
+            }}
             className={`absolute h-full bg-ghost-cursor rounded-lg animate-pulse z-[5] ${
               !showCursor && "opacity-0!"
             }`}

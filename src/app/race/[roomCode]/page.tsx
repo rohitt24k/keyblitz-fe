@@ -1,14 +1,17 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRaceSocket } from "@/hooks/useRaceSocket";
 import { useTypingStore } from "@/lib/store-provider";
+import { useMutableData } from "@/context/mutableDataProvider";
 import RaceLobby from "@/components/RaceLobby";
 import Countdown from "@/components/Countdown";
 import TypingParagraph from "@/components/TypingParagraph";
+import Chart from "@/components/Chart";
 import { Button } from "@/components/ui/button";
-import { Muted } from "@/components/ui/typography";
+import { H2, Muted } from "@/components/ui/typography";
+import { calculateTimeDiff } from "@/utils/calculateTimeDiff";
 import type { FinalResult, LeaderboardEntry } from "@/types/race";
 
 const PLAYER_ID_KEY = "kb_playerId";
@@ -23,7 +26,6 @@ function getOrCreatePlayerId(): string {
   return id;
 }
 
-// Rendered once identity is confirmed — contains the WebSocket hook
 function RaceRoom({
   roomCode,
   playerId,
@@ -34,25 +36,38 @@ function RaceRoom({
   username: string;
 }) {
   const router = useRouter();
-  const [results, setResults] = useState<FinalResult[] | null>(null);
+  const [localFinished, setLocalFinished] = useState(false);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [finalResults, setFinalResults] = useState<FinalResult[] | null>(null);
 
   const setCursors = useTypingStore((s) => s.setCursors);
+  const { testProp } = useMutableData();
+
+  // Stable ref so handleLeaderboard never changes identity (avoids WebSocket reconnects)
+  const localFinishedRef = useRef(false);
+  useEffect(() => {
+    localFinishedRef.current = localFinished;
+  }, [localFinished]);
 
   const handleFinished = useCallback((r: FinalResult[]) => {
-    setResults(r);
+    setFinalResults(r);
   }, []);
 
   const handleLeaderboard = useCallback(
     (entries: LeaderboardEntry[]) => {
-      const newCursors = entries
-        .filter((e) => e.playerId !== playerId)
-        .map((e) => ({
-          name: e.username,
-          wordIndex: e.wordIndex,
-          letterIndex: e.letterIndex,
-          wpm: e.wpm,
-        }));
-      setCursors(newCursors);
+      setLeaderboard(entries);
+      if (!localFinishedRef.current) {
+        setCursors(
+          entries
+            .filter((e) => e.playerId !== playerId)
+            .map((e) => ({
+              name: e.username,
+              wordIndex: e.wordIndex,
+              letterIndex: e.letterIndex,
+              wpm: e.wpm,
+            })),
+        );
+      }
     },
     [playerId, setCursors],
   );
@@ -66,15 +81,12 @@ function RaceRoom({
       onLeaderboard: handleLeaderboard,
     });
 
-  // When the race starts, clear any leftover cursors from solo mode so that
-  // GhostCursor's WPM-based animation doesn't start before server positions arrive.
+  // Clear cursors when race starts so GhostCursor's WPM animation never fires
   useEffect(() => {
-    if (status === "racing") {
-      setCursors([]);
-    }
+    if (status === "racing") setCursors([]);
   }, [status, setCursors]);
 
-  // Clear cursors when the race room unmounts
+  // Clear cursors on unmount
   useEffect(() => {
     return () => setCursors([]);
   }, [setCursors]);
@@ -86,37 +98,120 @@ function RaceRoom({
     [sendProgress],
   );
 
-  if (!isConnected) {
-    return <Muted>Connecting…</Muted>;
-  }
+  const handleTestEnd = useCallback(() => {
+    setLocalFinished(true);
+    setCursors([]);
+  }, [setCursors]);
 
-  if (results) {
+  // ── Results screen (shown immediately when local player finishes) ─────────────
+  if (localFinished) {
+    const { totalTimeSpent, totalCorrectCharTyped, totalCharTyped, wpm, accuracy } =
+      testProp.current;
+    const { minutes, seconds } = calculateTimeDiff(0, totalTimeSpent);
+    const timeLabel = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
+
+    const sortedLive = [...leaderboard].sort((a, b) => {
+      if (b.wordIndex !== a.wordIndex) return b.wordIndex - a.wordIndex;
+      return b.letterIndex - a.letterIndex;
+    });
+    const sortedFinal = finalResults
+      ? [...finalResults].sort((a, b) => a.rank - b.rank)
+      : null;
+
     return (
-      <div className="flex flex-col gap-6">
-        <h2 className="text-2xl font-semibold">Race Results</h2>
-        <ol className="flex flex-col gap-3">
-          {results.map((r) => (
-            <li key={r.playerId} className="flex items-center gap-4">
-              <span className="w-6 font-bold text-muted-foreground">
-                #{r.rank}
-              </span>
-              <span className="flex-1 text-foreground">{r.username}</span>
-              <span className="tabular-nums text-foreground">{r.wpm} WPM</span>
-              <span className="tabular-nums text-muted-foreground">
-                {Math.round(r.accuracy)}%
-              </span>
-            </li>
-          ))}
-        </ol>
-        <Button
-          variant="default"
-          className="self-start"
-          onClick={() => router.push("/")}
-        >
-          Back to home
-        </Button>
+      <div className="flex flex-col gap-8 lg:flex-row">
+        {/* Left: personal stats + chart */}
+        <div className="flex-1 min-w-0 space-y-4">
+          <H2>Your Results</H2>
+          <div className="flex gap-8 flex-wrap">
+            <div>
+              <Muted>WPM</Muted>
+              <p className="text-4xl font-bold">{wpm}</p>
+            </div>
+            <div>
+              <Muted>Accuracy</Muted>
+              <p className="text-4xl font-bold">{accuracy}%</p>
+            </div>
+            <div>
+              <Muted>Time</Muted>
+              <p className="text-4xl font-bold">{timeLabel}</p>
+            </div>
+            <div>
+              <Muted>Characters</Muted>
+              <p className="text-4xl font-bold">
+                <span className="text-foreground">{totalCorrectCharTyped}</span>
+                <span className="text-foreground-light">/{totalCharTyped}</span>
+              </p>
+            </div>
+          </div>
+          <div className="h-[250px]">
+            <Chart />
+          </div>
+        </div>
+
+        {/* Right: leaderboard */}
+        <div className="w-full lg:w-64 shrink-0 space-y-4">
+          <H2>Leaderboard</H2>
+          <div className="flex flex-col gap-2">
+            {sortedFinal
+              ? sortedFinal.map((r) => (
+                  <div key={r.playerId} className="flex items-center gap-2">
+                    <span className="text-muted-foreground w-6 text-sm tabular-nums shrink-0">
+                      #{r.rank}
+                    </span>
+                    <span className="flex-1 text-sm truncate">
+                      {r.username}
+                      {r.playerId === playerId && (
+                        <span className="text-muted-foreground"> (you)</span>
+                      )}
+                    </span>
+                    <span className="tabular-nums text-sm font-medium shrink-0">
+                      {r.wpm} wpm
+                    </span>
+                  </div>
+                ))
+              : sortedLive.map((e, i) => (
+                  <div key={e.playerId} className="flex items-center gap-2">
+                    <span className="text-muted-foreground w-6 text-sm tabular-nums shrink-0">
+                      #{i + 1}
+                    </span>
+                    <span className="flex-1 text-sm truncate">
+                      {e.username}
+                      {e.playerId === playerId && (
+                        <span className="text-muted-foreground"> (you)</span>
+                      )}
+                    </span>
+                    <span className="tabular-nums text-sm font-medium shrink-0">
+                      {e.wpm} wpm
+                    </span>
+                    {e.isFinished ? (
+                      <span className="text-xs text-muted-foreground shrink-0">
+                        done
+                      </span>
+                    ) : (
+                      <span className="text-xs text-muted-foreground animate-pulse shrink-0">
+                        racing
+                      </span>
+                    )}
+                  </div>
+                ))}
+          </div>
+          <Button
+            variant="default"
+            className="w-full"
+            onClick={() => router.push("/")}
+          >
+            Back to home
+          </Button>
+        </div>
       </div>
     );
+  }
+
+  // ── Pre-finish screens ───────────────────────────────────────────────────────
+
+  if (!isConnected) {
+    return <Muted>Connecting…</Muted>;
   }
 
   if (status === "lobby") {
@@ -144,6 +239,7 @@ function RaceRoom({
     <TypingParagraph
       words={words}
       onCursorMove={handleCursorMove}
+      onTestEnd={handleTestEnd}
     />
   );
 }

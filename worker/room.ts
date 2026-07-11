@@ -1,10 +1,12 @@
+import { MongoClient } from "mongodb";
 import type {
   ClientMessage,
-  ServerMessage,
-  RaceStatus,
-  PlayerSnapshot,
-  LeaderboardEntry,
+  Env,
   FinalResult,
+  LeaderboardEntry,
+  PlayerSnapshot,
+  RaceStatus,
+  ServerMessage,
 } from "./types";
 
 interface Player {
@@ -36,14 +38,23 @@ export class RoomObject implements DurableObject {
   private creatorId: string | null = null;
   private words: string[] = [];
   private startTime: number | null = null;
+  private endTime: number | null = null;
+  private roomCode: string | null = null;
   private leaderboardTimer: ReturnType<typeof setInterval> | null = null;
 
   constructor(
     private readonly state: DurableObjectState,
-    private readonly env: object,
+    private readonly env: Env,
   ) {}
 
   async fetch(request: Request): Promise<Response> {
+    // Capture room code from URL on first connection
+    if (!this.roomCode) {
+      const url = new URL(request.url);
+      const match = url.pathname.match(/\/([^/]+)$/);
+      if (match) this.roomCode = match[1];
+    }
+
     if (request.headers.get("Upgrade") !== "websocket") {
       return new Response("Expected WebSocket upgrade", { status: 426 });
     }
@@ -180,7 +191,7 @@ export class RoomObject implements DurableObject {
       (wordIndex === player.wordIndex && letterIndex > player.letterIndex);
     if (!isAhead) return;
 
-    // Reject out-of-bounds (can't jump past the end)
+    // Reject out-of-bounds
     if (wordIndex > this.words.length) return;
 
     player.wordIndex = wordIndex;
@@ -200,11 +211,11 @@ export class RoomObject implements DurableObject {
     }
   }
 
-  /** Absolute character position in the passage, for WPM calculation only. */
+  /** Absolute character position in the passage, used only for WPM math. */
   private charCount(wordIndex: number, letterIndex: number): number {
     const completed = this.words
       .slice(0, wordIndex)
-      .reduce((sum, w) => sum + w.length + 1, 0); // +1 for the space after each word
+      .reduce((sum, w) => sum + w.length + 1, 0);
     const maxLen = this.words.join(" ").length;
     return Math.min(completed + letterIndex, maxLen);
   }
@@ -216,6 +227,7 @@ export class RoomObject implements DurableObject {
     if (!allDone) return;
 
     this.status = "finished";
+    this.endTime = Date.now();
     this.stopLeaderboardTick();
     this.broadcastFinished();
   }
@@ -229,12 +241,51 @@ export class RoomObject implements DurableObject {
       playerId: p.playerId,
       username: p.username,
       wpm: p.wpm,
-      accuracy: 100, // TODO Phase 5+: track correct chars per keystroke
+      accuracy: 100, // Phase 5+: track correct chars per keystroke
       rank: i + 1,
       finishedAt: p.finishedAt,
     }));
 
+    // Broadcast first — Mongo write must not block clients receiving results
     this.broadcast({ type: "finished", results });
+
+    // Fire-and-forget: keep the DO alive until the write completes
+    this.state.waitUntil(
+      this.persistResults(results).catch((err) =>
+        console.error("[RoomObject] MongoDB write failed:", err),
+      ),
+    );
+  }
+
+  private async persistResults(results: FinalResult[]): Promise<void> {
+    const uri = this.env.MONGODB_URI;
+    if (!uri) {
+      console.warn("[RoomObject] MONGODB_URI not set — skipping persistence");
+      return;
+    }
+
+    const client = new MongoClient(uri);
+    try {
+      await client.connect();
+      const db = client.db("keyblitz");
+      await db.collection("race_results").insertOne({
+        roomCode: this.roomCode,
+        textPassage: this.words.join(" "),
+        startedAt: this.startTime ? new Date(this.startTime) : new Date(),
+        endedAt: new Date(this.endTime ?? Date.now()),
+        players: results.map((r) => ({
+          playerId: r.playerId,
+          username: r.username,
+          wpm: r.wpm,
+          accuracy: r.accuracy / 100, // store as ratio: 0.96 not 96
+          rank: r.rank,
+          finishedAt: r.finishedAt ? new Date(r.finishedAt) : null,
+        })),
+      });
+      console.log(`[RoomObject] Persisted race results for room ${this.roomCode}`);
+    } finally {
+      await client.close();
+    }
   }
 
   private startLeaderboardTick(): void {

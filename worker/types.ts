@@ -1,3 +1,8 @@
+export interface Env {
+  ROOM: DurableObjectNamespace;
+  MONGODB_URI: string;
+}
+
 export type RaceStatus = "lobby" | "countdown" | "racing" | "finished";
 
 export interface PlayerSnapshot {

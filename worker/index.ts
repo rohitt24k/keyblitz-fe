@@ -1,10 +1,7 @@
 import { RoomObject } from "./room";
+import type { Env } from "./types";
 
 export { RoomObject };
-
-interface Env {
-  ROOM: DurableObjectNamespace;
-}
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",

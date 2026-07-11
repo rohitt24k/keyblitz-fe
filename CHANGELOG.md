@@ -67,3 +67,24 @@ Format: `[Phase N] YYYY-MM-DD — description`
 - `worker/room.ts` — `Player` stores `wordIndex/letterIndex`; `charCount()` helper computes WPM internally; leaderboard tick broadcasts `wordIndex/letterIndex` directly
 - `src/hooks/useRaceSocket.ts` — `sendProgress(wordIndex, letterIndex)` (was `sendProgress(charIndex)`); state field `words: string[]` (was `text: string`); `pendingProgressRef` stores `{ wordIndex, letterIndex }`
 - `src/app/race/[roomCode]/page.tsx` — removed `computeCharIndex`, `charIndexToPosition`, `wordsRef`; `handleCursorMove` passes positions straight to `sendProgress`; `handleLeaderboard` reads `e.wordIndex/e.letterIndex` directly
+
+### Fixed (post-Phase 4 bug fixes)
+- `src/components/ShowWordWithCursor.tsx` — cursor erratic movement fixed: changed `layoutId` and `key` from array index to `cursor.name` (stable across sort-order changes); removed stale `ghostsLeftPos` state; position now computed inline
+- `src/app/race/[roomCode]/page.tsx` — results screen redesigned: left column shows personal stats + chart (matching solo finish screen), right column shows live leaderboard updating every 300ms with "racing"/"done" status per player; `onTestEnd` triggers results immediately when local player finishes without waiting for all players
+
+---
+
+## [Phase 5] 2026-07-11
+
+### Added
+- `mongodb` package — native MongoDB driver (works via `nodejs_compat` Cloudflare flag)
+- `worker/types.ts` — `Env` interface (`ROOM: DurableObjectNamespace`, `MONGODB_URI: string`)
+- `worker/room.ts` — `persistResults()`: opens `MongoClient`, inserts one `race_results` document, closes client; called via `this.state.waitUntil()` in `broadcastFinished()` so the DO stays alive until the write completes; skips gracefully if `MONGODB_URI` is unset
+- `worker/room.ts` — `endTime` field tracks race end timestamp; `roomCode` extracted from request URL on first connection
+- `.dev.vars.example` — documents `MONGODB_URI` env variable for local dev
+- `.gitignore` — added `.dev.vars` exclusion
+
+### Changed
+- `worker/index.ts` — removed local `Env` interface; imports `Env` from `./types`
+- `worker/room.ts` — `env` typed as `Env` (was `object`)
+- `docs/phases.md` — updated Phases 1–4 with accurate what-was-built descriptions and deviations; fleshed out Phases 5–8 with detailed task lists
