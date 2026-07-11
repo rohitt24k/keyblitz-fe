@@ -2,7 +2,7 @@
 
 ## What this is
 
-A typing speed test web app (like Monkeytype). Users type a displayed paragraph; the app tracks WPM, accuracy, per-second throughput, and error counts. Results are shown in a chart after the test ends.
+A real-time multiplayer typing race web app. Players join a race room via a shared link, race the same passage simultaneously, and see live competitor cursors. There is also a single-player mode (the original feature) on the home page.
 
 ## Stack
 
@@ -13,8 +13,59 @@ A typing speed test web app (like Monkeytype). Users type a displayed paragraph;
 - **Recharts** for the results chart
 - **Space Mono** font (loaded via `next/font/google`, variable `--font-spacemono`)
 - **`@svgr/webpack`** — SVGs imported as React components (`import Foo from "@/images/foo.svg"`)
-- **`socket.io-client`** — installed, reserved for multiplayer (not yet wired to any component)
 - **`tw-animate-css`** — imported in `globals.css` for Tailwind v4 animation utilities
+- **Cloudflare Durable Objects** — realtime multiplayer backend (one DO per race room)
+- **Native WebSocket API** — browser-side; no socket.io
+
+## Multiplayer architecture
+
+```
+Browser (Next.js)
+  ├─ POST ${WORKER_URL}/api/room/create   → Worker → DO.idFromName(roomCode)
+  └─ WS   ${WORKER_URL}/api/ws/:roomCode  → Worker → DO.fetch() WebSocket upgrade
+                                                    │
+                                          RoomObject (Durable Object)
+                                          ├─ in-memory: players map, status, text
+                                          └─ on finish: MongoDB write (Phase 5+)
+```
+
+**Environment variable**: `NEXT_PUBLIC_WORKER_URL` (default: `http://localhost:8787`).  
+Local dev: run `npm run dev` (Next.js) + `npm run worker:dev` (wrangler) simultaneously.
+
+### Worker files (`worker/`)
+
+- `worker/index.ts` — Worker entry: routes HTTP + WebSocket, exports `RoomObject`
+- `worker/room.ts` — `RoomObject` Durable Object: all race game logic
+- `worker/types.ts` — Shared type definitions (mirrored in `src/types/race.ts`)
+- `worker/tsconfig.json` — Separate TS config (uses `@cloudflare/workers-types`, excluded from Next.js)
+- `wrangler.toml` — Cloudflare config (DO binding, dev port)
+
+### Race room frontend
+
+- `src/app/race/[roomCode]/page.tsx` — Race page: username prompt → lobby → countdown → typing → results
+- `src/app/race/[roomCode]/layout.tsx` — Race layout (Header only, no RestartButton)
+- `src/hooks/useRaceSocket.ts` — WebSocket lifecycle, throttled `progress` sends, message dispatch
+- `src/components/RaceLobby.tsx` — Lobby: player list, share link, host-only Start button
+- `src/components/Countdown.tsx` — Configurable numeric countdown
+- `src/components/RaceResults.tsx` — Final results table (Phase 4+)
+- `src/types/race.ts` — All WebSocket message types (keep in sync with `worker/types.ts`)
+
+### WebSocket message protocol
+
+| Message | Direction | Payload |
+|---|---|---|
+| `join` | client → server | `{ playerId, username }` |
+| `start` | client → server | `{}` (host only) |
+| `progress` | client → server | `{ charIndex }` (throttled ~150 ms) |
+| `status` | server → all | `{ status, players[], creatorId, text? }` |
+| `leaderboard` | server → all | `[{ playerId, username, charIndex, wpm }]` (Phase 3+) |
+| `finished` | server → all | `[{ playerId, username, wpm, accuracy, rank }]` (Phase 4+) |
+| `error` | server → one | `{ message }` |
+
+### Player identity (anonymous)
+
+No accounts. `playerId = crypto.randomUUID()` stored in `localStorage` under key `kb_playerId`.  
+`username` stored under `kb_username`. Both sent on `join`. The DO trusts this pairing for room lifetime.
 
 ## File naming conventions
 
@@ -225,11 +276,22 @@ Add JSON files to `src/utils/words-list/` (numbered, e.g. `6.json`). The `getWor
 ## Common commands
 
 ```bash
-npm run dev      # Start dev server (localhost:3000)
-npm run build    # Production build
-npx tsc --noEmit # TypeScript check (run before committing)
-npm run lint     # ESLint
+npm run dev          # Next.js dev server (localhost:3000)
+npm run worker:dev   # Cloudflare Worker dev server (localhost:8787)
+npm run build        # Production build
+npx tsc --noEmit     # TypeScript check (Next.js files only)
+npm run lint         # ESLint
 ```
+
+Run both `npm run dev` and `npm run worker:dev` simultaneously for multiplayer local development.
+
+## What NOT to do (multiplayer additions)
+
+- Don't import from `worker/` in `src/` — the worker runs in a different runtime (Cloudflare Workers, not Node). Types are duplicated by design.
+- Don't use `socket.io-client` — it was removed. Use the native `WebSocket` API everywhere.
+- Don't add `@cloudflare/workers-types` to the root `tsconfig.json` — it conflicts with DOM types. Worker-specific types live in `worker/tsconfig.json`.
+- Don't reference `window` in server-rendered code — use `typeof window !== "undefined"` guards.
+- Don't add multiplayer state to the Zustand `typing-store` — use `useRaceSocket` state for room/player data, and only write to Zustand for cursor positions (via `setCursors`).
 
 ## What NOT to do
 
