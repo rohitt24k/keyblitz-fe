@@ -26,10 +26,17 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body className={`antialiased ${spaceMono.variable} font-sans dark`}>
+      <body className={`antialiased ${spaceMono.variable} dark font-sans`}>
         <StoreProvider>
           <MutableDataProvider>
-            <ThemeManager>{children}</ThemeManager>
+            <ThemeManager>
+              <div className="xs:w-112.5 max-xs:px-4 mx-auto flex h-svh flex-col sm:w-150 md:w-185 lg:w-245 xl:w-300">
+                {/* <Header /> */}
+                <div className="mt-8 flex flex-1 flex-col justify-center pb-[15vh]">
+                  {children}
+                </div>
+              </div>
+            </ThemeManager>
           </MutableDataProvider>
         </StoreProvider>
       </body>

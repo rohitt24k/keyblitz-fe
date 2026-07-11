@@ -286,6 +286,20 @@ export const useTypingEngine = ({
           onTestResume?.();
         }
         checkForError(wordIndex, inputElement, keyInput !== null, keyInput);
+
+        // Auto-end: last char of last word typed correctly — no space needed
+        if (
+          testStarted &&
+          wordIndex === wordArr.length - 1 &&
+          keyInput !== null &&
+          inputElement.value === correctWordArr[wordIndex]
+        ) {
+          const correctWord = correctWordArr[wordIndex];
+          onWordComplete?.(wordIndex, correctWord.length, correctWord.length);
+          addWordTimeStamp({ index: wordIndex, timeStamp: Date.now() });
+          endTestMethod();
+          onTestEnd?.(testProp.current);
+        }
       }
 
       inputValue.current = inputElement.value;

@@ -32,11 +32,11 @@ const ShowWordWithCursor = ({
 
   return (
     <div
-      className="flex relative"
+      className="relative flex"
       id="wordContainer"
       ref={isCurrent ? currentWordRef : null}
     >
-      <div className="flex z-10" style={{ gap: letterWidth / 5 }}>
+      <div className="z-10 flex" style={{ gap: letterWidth / 5 }}>
         {wordProp.word.split("").map((letter, i) => (
           <TypingLetter
             letter={letter}
@@ -46,24 +46,24 @@ const ShowWordWithCursor = ({
         ))}
       </div>
 
-      {cursors.map((cursor) =>
-        cursor.wordIndex === index ? (
+      {cursors.map((cursor) => {
+        if (cursor.wordIndex !== index) return null;
+        const clampedIndex = Math.min(cursor.letterIndex, wordProp.word.length);
+        return (
           <motion.div
             layoutId={`cursor-${cursor.name}`}
             key={cursor.name}
             animate={{
-              x:
-                cursor.letterIndex * letterWidth +
-                cursor.letterIndex * (letterWidth / 5),
+              x: clampedIndex * letterWidth + clampedIndex * (letterWidth / 5),
             }}
-            className={`absolute h-full bg-ghost-cursor rounded-lg animate-pulse z-[5] ${
+            className={`bg-ghost-cursor absolute z-5 h-full animate-pulse rounded-lg ${
               !showCursor && "opacity-0!"
             }`}
             transition={{ type: "tween", duration: 0.15 }}
             style={{ width: letterWidth / 5, left: -letterWidth / 5 }}
           />
-        ) : null,
-      )}
+        );
+      })}
 
       {!isCurrent && index < wordIndex && wordProp.error?.error && (
         <div className="word-error" />

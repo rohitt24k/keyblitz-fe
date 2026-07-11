@@ -7,18 +7,24 @@ import { useMutableData } from "@/context/mutableDataProvider";
 import { calculateTimeDiff } from "@/utils/calculateTimeDiff";
 import { Button } from "./ui/button";
 import { H2, Muted } from "./ui/typography";
+import RestartButton from "./RestartButton";
 
 export default function FinishTest() {
   const {
     testProp: {
-      current: { totalTimeSpent, totalCorrectCharTyped, totalCharTyped, wpm, accuracy },
+      current: {
+        totalTimeSpent,
+        totalCorrectCharTyped,
+        totalCharTyped,
+        wpm,
+        accuracy,
+      },
     },
   } = useMutableData();
   const { resetStates } = useResetStates();
 
   const { minutes, seconds } = calculateTimeDiff(0, totalTimeSpent);
-  const timeLabel =
-    minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
+  const timeLabel = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
 
   return (
     <div className="space-y-4">
@@ -44,10 +50,12 @@ export default function FinishTest() {
           </p>
         </div>
       </div>
-      <div className="h-[250px]">
+      <div className="h-62.5">
         <Chart />
       </div>
-      <Button onClick={resetStates}>Restart</Button>
+      <div className="mx-auto">
+        <RestartButton />
+      </div>
     </div>
   );
 }

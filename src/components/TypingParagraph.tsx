@@ -7,10 +7,10 @@ import ChangeLevelOfTypingParagraph from "./ChangeLevelOfTypingParagraph";
 import TypingParagraphInputBox from "./TypingParagraphInputBox";
 import ParagraphDisplay from "./ParagraphDisplay";
 import CursorSVG from "@/images/cursor.svg";
-import GhostCursor from "./GhostCursor";
 import KeyboardInputHandler from "./KeyboardInputHandler";
-import { Muted } from "./ui/typography";
+import { H3, Muted } from "./ui/typography";
 import { useTypingEngine } from "@/hooks/useTypingEngine";
+import { useTypingStore } from "@/lib/store-provider";
 
 interface TypingParagraphProps {
   words: string[];
@@ -61,6 +61,10 @@ const TypingParagraph = ({
     onTestResume,
   });
 
+  const wordIndex = useTypingStore((s) => s.wordIndex);
+  const totalWords = useTypingStore((s) => s.wordArr.length);
+  const testStarted = useTypingStore((s) => s.testStarted);
+
   const cursorRef = useRef<HTMLDivElement>(null);
   const [showOverlay, setShowOverlay] = useState(false);
 
@@ -100,7 +104,13 @@ const TypingParagraph = ({
 
           <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} /> */}
 
-          <GhostCursor>
+          <>
+            <div
+              className={`mb-8 ml-8 flex gap-3 text-right font-mono text-sm transition-opacity duration-300 ${testStarted ? "opacity-100" : "opacity-0"}`}
+            >
+              <H3 className="text-foreground">{wordIndex}</H3>
+              <H3 className="text-foreground-light"> / {totalWords}</H3>
+            </div>
             <div
               className="relative overflow-hidden select-none"
               style={{
@@ -113,7 +123,7 @@ const TypingParagraph = ({
             >
               {showOverlay && (
                 <div
-                  className="absolute h-full w-full backdrop-blur-sm z-20 grid place-items-center cursor-pointer rounded-lg"
+                  className="absolute z-20 grid h-full w-full cursor-pointer place-items-center rounded-lg backdrop-blur-sm"
                   onClick={handleFocus}
                 >
                   <Muted className="flex items-center gap-2">
@@ -121,7 +131,7 @@ const TypingParagraph = ({
                   </Muted>
                 </div>
               )}
-              <div className="flex relative w-full">
+              <div className="relative flex w-full">
                 <ParagraphDisplay
                   typingParagraphRef={typingParagraphRef}
                   cursorRef={cursorRef}
@@ -136,7 +146,7 @@ const TypingParagraph = ({
                 testEnded={testEnded}
               />
             </div>
-          </GhostCursor>
+          </>
         </>
       </KeyboardInputHandler>
     </ChangeLevelOfTypingParagraph>
