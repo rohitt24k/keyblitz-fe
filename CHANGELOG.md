@@ -91,6 +91,23 @@ Format: `[Phase N] YYYY-MM-DD — description`
 
 ---
 
+## [Phase 7] 2026-07-12
+
+### Changed
+- `worker/room.ts` — full rewrite for WebSocket Hibernation API:
+  - `state.acceptWebSocket(server)` replaces `server.accept()` + `addEventListener` calls
+  - `webSocketMessage`, `webSocketClose`, `webSocketError`, `alarm` DO lifecycle methods added
+  - `Player` interface no longer holds a `socket` field — live sockets live in `sockets: Map<string, WebSocket>`
+  - `ws.serializeAttachment({ playerId })` written at join; `ws.deserializeAttachment()` replaces `socketToPlayer` Map
+  - `boot()`: reads `PersistedState` from `storage.get("s")`, rehydrates players, re-attaches live hibernated sockets via `state.getWebSockets()`, restarts leaderboard tick if needed — guarded by `booted` flag
+  - `persist()`: serialises full room state to `storage.put("s", ...)` — called after join, start, finish, disconnect
+  - Countdown `setTimeout` replaced by `state.storage.setAlarm(Date.now() + 5000)` — survives hibernation
+  - `alarm()`: if `status === "countdown"` → transitions to racing; else → room TTL cleanup (`storage.deleteAll()`)
+  - Room TTL alarm set to `Date.now() + 10 * 60 * 1000` in `broadcastFinished()`
+  - `broadcastLeaderboard()` stops tick when no connected players remain — lets DO hibernate between races
+
+---
+
 ## [Post-Phase 6] 2026-07-12
 
 ### Added

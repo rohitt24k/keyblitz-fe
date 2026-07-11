@@ -173,20 +173,30 @@ Status legend: 🔄 In progress · ✅ Complete · ❌ Blocked · ⏳ Pending
 ---
 
 ## Phase 7 — Hibernation + Idle Cleanup
-**Status**: ⏳ Pending  
+**Status**: ✅ Complete  
+**Completed**: 2026-07-12  
 **Validates**: N3
 
-### Planned tasks
-1. Switch from `server.accept()` to WebSocket Hibernation API: `this.state.acceptWebSocket(server)` in `fetch()`
-2. Move message handling from `addEventListener("message", ...)` to the DO lifecycle methods: `webSocketMessage(ws, message)`, `webSocketClose(ws)`, `webSocketError(ws)`
-3. DO lifecycle methods run on-demand (Cloudflare wakes the DO for each message) rather than keeping the DO alive continuously
-4. Add room TTL via alarms:
-   - `this.state.storage.setAlarm(Date.now() + 10 * 60 * 1000)` when race finishes or lobby goes idle
-   - `alarm()` method: close all hibernated sockets, allow DO to evict
+### What was built
+
+**`worker/room.ts`** fully rewritten for WebSocket Hibernation API:
+
+- `state.acceptWebSocket(server)` replaces `server.accept()` — Cloudflare hibernates the DO between messages instead of keeping it alive
+- Event listeners (`addEventListener`) removed; DO lifecycle methods added: `webSocketMessage(ws, data)`, `webSocketClose(ws)`, `webSocketError(ws)`
+- `alarm()` handles two purposes: if `status === "countdown"` → fires the racing transition (5 s after start); otherwise → TTL cleanup (`storage.deleteAll()` + close all sockets)
+- `ws.serializeAttachment({ playerId })` written at join time; `ws.deserializeAttachment()` used in `webSocketClose` and anywhere a `playerId` is needed — replaces the `socketToPlayer` Map entirely
+- `boot()` method: called at the start of every DO lifecycle method; reads `PersistedState` from `storage.get("s")` and rehydrates players map; iterates `state.getWebSockets()` to rebuild `sockets: Map<string, WebSocket>` by matching serialised attachments; restarts leaderboard tick if status was `"racing"`; guarded by a `booted` flag so it only runs once per DO wake
+- `persist()` method: serialises all room state (excluding sockets) to `storage.put("s", ...)` — called after join, start, finish, and disconnect
+- `Player` interface no longer has a `socket` field — sockets live in a separate `sockets: Map<string, WebSocket>` keyed by `playerId`
+- Countdown uses `state.storage.setAlarm(Date.now() + 5000)` instead of `setTimeout` — alarm survives DO hibernation
+- Room TTL: `state.storage.setAlarm(Date.now() + 10 * 60 * 1000)` set in `broadcastFinished()`; `alarm()` fires cleanup
+- `broadcastLeaderboard()` stops the tick when no connected players remain, allowing the DO to hibernate during quiet periods
 
 ### Test checklist
 - [ ] Create a room, leave it idle in lobby → Cloudflare dashboard shows DO goes into hibernation (no active CPU)
-- [ ] Race finishes → DO alarm fires ~10 minutes later and evicts the room
+- [ ] Race finishes → DO alarm fires ~10 minutes later and evicts the room (`storage.deleteAll()`)
+- [ ] Start a race, kill the Wrangler process mid-countdown, restart it → race transitions to racing correctly (alarm fires after wake)
+- [ ] Join a room, close the tab mid-race, reopen → progress is preserved (boot() rehydrates from storage)
 
 ---
 
