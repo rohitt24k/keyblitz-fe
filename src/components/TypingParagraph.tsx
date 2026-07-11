@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import type { ITestProp } from "@/types/test";
 import { gap } from "@/lib/constants";
 import ChangeLevelOfTypingParagraph from "./ChangeLevelOfTypingParagraph";
 import TypingParagraphInputBox from "./TypingParagraphInputBox";

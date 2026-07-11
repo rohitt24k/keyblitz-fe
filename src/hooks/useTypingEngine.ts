@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutableData } from "@/context/mutableDataProvider";
+import type { ITestProp } from "@/types/test";
 import { useInputFocus } from "@/hooks/useInputFocus";
 import { useTypingStore } from "@/lib/store-provider";
 import React, {

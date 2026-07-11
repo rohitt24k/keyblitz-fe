@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import type { wordProp } from "@/types/word";
 import TypingLetter from "./TypingLetter";
 import { motion } from "framer-motion";
 import { useTypingStore } from "@/lib/store-provider";

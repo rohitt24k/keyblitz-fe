@@ -7,6 +7,7 @@
 // Never instantiate directly — always consume via useTypingStore() from store-provider.tsx.
 import { createStore } from "zustand/vanilla";
 import { getWordsToType } from "@/actions/getWordsToType";
+import type { wordProp } from "@/types/word";
 
 type GhostCursor = {
   name: string;

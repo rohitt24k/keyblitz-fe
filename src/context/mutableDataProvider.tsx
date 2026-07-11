@@ -1,6 +1,7 @@
 "use client";
 
 import { useTypingStore } from "@/lib/store-provider";
+import type { ITestProp } from "@/types/test";
 import { calculateTimeDiff } from "@/utils/calculateTimeDiff";
 import { calculateWpm } from "@/utils/calculateWPM";
 import { createContext, MutableRefObject, useContext, useRef } from "react";
