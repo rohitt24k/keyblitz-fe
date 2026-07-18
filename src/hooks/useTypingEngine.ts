@@ -122,7 +122,8 @@ export const useTypingEngine = ({
 
   useEffect(() => {
     inputValue.current = "";
-  }, [resetTrigger]);
+    if (inputRef.current) inputRef.current.value = "";
+  }, [resetTrigger, inputRef]);
 
   useEffect(() => {
     let intervalId: NodeJS.Timeout | null = null;
